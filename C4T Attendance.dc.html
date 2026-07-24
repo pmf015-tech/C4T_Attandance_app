@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    body{margin:0;background:#f2f9ff;font-family:'Noto Sans TC','Inter',sans-serif;-webkit-font-smoothing:antialiased}
+    *{box-sizing:border-box}
+    input,select,textarea{font-family:inherit}
+    a{color:#0b72b8}
+    a:hover{color:#095f96}
+    ::placeholder{color:#9db2c1}
+    @keyframes c4t-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    @keyframes c4t-toast-in{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+    @keyframes c4t-pulse-blue{0%{box-shadow:0 0 0 0 #05bada66}70%{box-shadow:0 0 0 10px rgba(5,186,218,0)}100%{box-shadow:0 0 0 0 rgba(5,186,218,0)}}
+    @keyframes c4t-pulse-green{0%{box-shadow:0 0 0 0 #17a36166}70%{box-shadow:0 0 0 10px rgba(23,163,97,0)}100%{box-shadow:0 0 0 0 rgba(23,163,97,0)}}
+    @keyframes c4t-pulse-red{0%{box-shadow:0 0 0 0 #e0483f66}70%{box-shadow:0 0 0 10px rgba(224,72,63,0)}100%{box-shadow:0 0 0 0 rgba(224,72,63,0)}}
+    @keyframes c4t-pulse-gray{0%{box-shadow:0 0 0 0 #6b7f8f66}70%{box-shadow:0 0 0 10px rgba(107,127,143,0)}100%{box-shadow:0 0 0 0 rgba(107,127,143,0)}}
+  </style>
+</helmet>
+
+<div style="min-height:100vh;background:#f2f9ff;display:flex;flex-direction:column;align-items:center;position:relative">
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#16232f;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:999;animation:c4t-toast-in .25s ease-out;white-space:nowrap">{{ toast }}</div>
+  </sc-if>
+
+  <!-- ============ S1 LOGIN ============ -->
+  <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+    <div style="min-height:100vh;width:100%;display:flex;align-items:center;justify-content:center;padding:24px">
+      <div style="width: 395px; max-width: 350px; background: linear-gradient(0deg,#ffffff 0%,#f4f7fb 100%); border: 5px solid #ffffff; border-radius: 40px; box-shadow: 0 30px 30px -20px rgba(133,189,215,.88); padding: 25px 35px 35px; height: 574px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:6px">
+          <img src="uploads/c4t-logo-cropped.png" alt="C4T" style="width:56px;height:45px;object-fit:contain;mix-blend-mode:multiply">
+        </div>
+        <div style="text-align:center;font-weight:900;font-size:26px;color:#1089d3">登入</div>
+
+        <sc-if value="{{ loginError }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fceceb;border:1px solid #f6c9c6;color:#c23b32;font-size:13px;font-weight:500;padding:10px 14px;border-radius:14px;margin-top:16px">{{ loginError }}</div>
+        </sc-if>
+
+        <div style="margin-top:20px;display:flex;flex-direction:column;gap:0">
+          <input type="text" value="{{ loginEmail }}" onChange="{{ onEmailChange }}" placeholder="電郵地址" style="width:100%;background:#fff;border:2px solid transparent;padding:15px 20px;border-radius:20px;box-shadow:#cff0ff 0px 10px 10px -5px;font-size:14px;color:#16232f;outline:none">
+          <input type="password" value="{{ loginPassword }}" onChange="{{ onPasswordChange }}" placeholder="密碼" style="width:100%;background:#fff;border:2px solid transparent;padding:15px 20px;border-radius:20px;box-shadow:#cff0ff 0px 10px 10px -5px;font-size:14px;color:#16232f;outline:none;margin-top:15px">
+          <span style="display:block;margin-top:10px;margin-left:10px;font-size:11.5px;color:#0099ff;font-weight:600;cursor:pointer">忘記密碼？</span>
+          <button onClick="{{ onLogin }}" style="display:block;width:100%;font-weight:700;border:none;color:#fff;background-image:linear-gradient(30deg,#0400ff,#4ce3f7);background-size:100% auto;padding-block:15px;margin:20px auto 0;border-radius:20px;box-shadow:rgba(133,189,215,.88) 0px 20px 10px -15px;font-size:15px;cursor:pointer" style-hover="background-position:right center;background-size:200% auto;animation:c4t-pulse-blue 1.5s infinite">登入</button>
+        </div>
+
+        <div style="margin-top:22px;font-size:11px;color:#aaaaaa;text-align:center;line-height:1.7">員工帳戶登入後進入「員工 Portal」<br>電郵含 admin 的帳戶進入「管理員 Portal」</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ EMPLOYEE PORTAL ============ -->
+  <sc-if value="{{ isEmployee }}" hint-placeholder-val="{{ false }}">
+    <div style="width:100%;max-width:480px;min-height:100vh;background:#f2f9ff;display:flex;flex-direction:column;box-shadow:0 0 0 1px #e2edf5">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:#ffffff;border-bottom:1px solid #e2edf5;position:sticky;top:0;z-index:10">
+        <div style="display:flex;align-items:center;gap:8px">
+          <img src="uploads/c4t-logo-cropped.png" alt="C4T" style="width:26px;height:21px;object-fit:contain;mix-blend-mode:multiply">
+          <span style="font-size:15px;font-weight:800;color:#16232f">出勤 App</span>
+        </div>
+        <div onClick="{{ onLogout }}" style="font-size:12.5px;font-weight:600;color:#6b7f8f;cursor:pointer;display:flex;align-items:center;gap:4px">
+          登出
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7f8f" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        </div>
+      </div>
+
+      <div style="flex:1;overflow-y:auto;padding:20px 20px 100px 20px">
+
+        <!-- S2 主頁 / 打卡 -->
+        <sc-if value="{{ empTabHome }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <div style="margin-bottom:18px">
+              <div style="font-size:20px;font-weight:800;color:#16232f">早晨，{{ currentUserName }}</div>
+              <div style="font-size:13px;color:#6b7f8f;margin-top:3px">{{ todayLabel }}</div>
+            </div>
+
+            <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:16px;box-shadow:0 1px 3px rgba(16,35,50,.06);padding:22px;margin-bottom:16px">
+              <div style="font-size:13px;font-weight:600;color:#40556a;margin-bottom:12px">出勤驗證訊號</div>
+              <div style="display:flex;gap:10px;margin-bottom:20px">
+                <div style="flex:1;background:{{ wifiCardBg }};border:1px solid {{ wifiCardBorder }};border-radius:12px;padding:14px 12px;display:flex;flex-direction:column;gap:8px;align-items:center">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ wifiColor }}" stroke-width="2"><path d="M5 13a10 10 0 0 1 14 0"></path><path d="M8.5 16.5a5 5 0 0 1 7 0"></path><circle cx="12" cy="20" r="1" fill="{{ wifiColor }}" stroke="none"></circle></svg>
+                  <div style="font-size:12px;font-weight:700;color:#16232f">Wi-Fi 網絡</div>
+                  <div style="font-size:11.5px;font-weight:600;color:{{ wifiColor }}">{{ wifiLabel }}</div>
+                </div>
+                <div style="flex:1;background:{{ gpsCardBg }};border:1px solid {{ gpsCardBorder }};border-radius:12px;padding:14px 12px;display:flex;flex-direction:column;gap:8px;align-items:center">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ gpsColor }}" stroke-width="2"><path d="M12 22s7-7.4 7-12a7 7 0 1 0-14 0c0 4.6 7 12 7 12z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
+                  <div style="font-size:12px;font-weight:700;color:#16232f">GPS 定位</div>
+                  <div style="font-size:11.5px;font-weight:600;color:{{ gpsColor }}">{{ gpsLabel }}</div>
+                </div>
+              </div>
+
+              <button onClick="{{ onPunch }}" disabled="{{ punchDisabled }}" style="{{ punchButtonStyle }}" style-hover="background-position:right center;background-size:200% auto;animation:c4t-pulse-blue 1.5s infinite">{{ punchButtonLabel }}</button>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-bottom:16px">
+              <div style="flex:1;background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;padding:14px;text-align:center">
+                <div style="font-size:11.5px;color:#6b7f8f;font-weight:600;margin-bottom:4px">上班時間</div>
+                <div style="font-size:18px;font-weight:800;color:#16232f">{{ punchInDisplay }}</div>
+              </div>
+              <div style="flex:1;background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;padding:14px;text-align:center">
+                <div style="font-size:11.5px;color:#6b7f8f;font-weight:600;margin-bottom:4px">下班時間</div>
+                <div style="font-size:18px;font-weight:800;color:#16232f">{{ punchOutDisplay }}</div>
+              </div>
+            </div>
+
+            <div style="font-size:13px;font-weight:700;color:#16232f;margin-bottom:10px">過去 7 日</div>
+            <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;overflow:hidden;margin-bottom:16px">
+              <sc-for list="{{ last7Days }}" as="d" hint-placeholder-count="7">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid #eef4f9">
+                  <div style="font-size:12.5px;color:#40556a;width:70px;font-weight:600">{{ d.date }}</div>
+                  <div style="font-size:12.5px;color:#16232f;flex:1;text-align:center">{{ d.times }}</div>
+                  <div style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:{{ d.badgeBg }};color:{{ d.badgeColor }}">{{ d.badgeLabel }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="display:flex;gap:8px;background:#eaf5fc;border-radius:10px;padding:12px 14px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0b72b8" stroke-width="2" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="8"></line></svg>
+              <div style="font-size:11.5px;color:#3a5872;line-height:1.6">定位資訊只會於打卡一刻讀取一次，用作核實你身處辦公室範圍，公司不會持續追蹤你的位置。</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- S3 我嘅出勤 -->
+        <sc-if value="{{ empTabAttendance }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:20px;font-weight:800;color:#16232f;margin-bottom:16px">我嘅出勤</div>
+
+            <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:16px;padding:18px;margin-bottom:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                <div style="font-size:14px;font-weight:700;color:#16232f">2026年7月</div>
+                <div style="display:flex;gap:14px;font-size:11px;color:#6b7f8f">
+                  <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:#17a361;display:inline-block"></span>已驗證</span>
+                  <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:#d98c0a;display:inline-block"></span>待審核</span>
+                  <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:#e0483f;display:inline-block"></span>缺勤</span>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:11px;color:#9db2c1;text-align:center;margin-bottom:6px;font-weight:600">
+                <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">
+                <sc-for list="{{ calendarDays }}" as="cd" hint-placeholder-count="35">
+                  <div style="position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:12.5px;font-weight:600;color:{{ cd.textColor }};background:{{ cd.bg }}">
+                    {{ cd.day }}
+                    <sc-if value="{{ cd.hasDot }}" hint-placeholder-val="{{ false }}">
+                      <span style="position:absolute;bottom:4px;width:5px;height:5px;border-radius:50%;background:{{ cd.dotColor }}"></span>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-bottom:16px">
+              <div style="flex:1;background:#eaf5fc;border-radius:10px;padding:10px;text-align:center">
+                <div style="font-size:16px;font-weight:800;color:#0b72b8">{{ monthOkCount }}</div>
+                <div style="font-size:10.5px;color:#3a5872;font-weight:600;margin-top:2px">出勤日數</div>
+              </div>
+              <div style="flex:1;background:#fdf2df;border-radius:10px;padding:10px;text-align:center">
+                <div style="font-size:16px;font-weight:800;color:#d98c0a">{{ monthPendingCount }}</div>
+                <div style="font-size:10.5px;color:#8a6413;font-weight:600;margin-top:2px">待審核</div>
+              </div>
+              <div style="flex:1;background:#fceceb;border-radius:10px;padding:10px;text-align:center">
+                <div style="font-size:16px;font-weight:800;color:#e0483f">{{ monthAbsentCount }}</div>
+                <div style="font-size:10.5px;color:#8a3a34;font-weight:600;margin-top:2px">缺勤</div>
+              </div>
+            </div>
+
+            <div style="font-size:13px;font-weight:700;color:#16232f;margin-bottom:10px">詳細紀錄</div>
+            <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;overflow:hidden">
+              <sc-for list="{{ last7Days }}" as="d" hint-placeholder-count="7">
+                <div style="padding:12px 14px;border-bottom:1px solid #eef4f9">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                    <div style="font-size:12.5px;font-weight:700;color:#16232f">{{ d.date }}</div>
+                    <div style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:{{ d.badgeBg }};color:{{ d.badgeColor }}">{{ d.badgeLabel }}</div>
+                  </div>
+                  <div style="font-size:11.5px;color:#6b7f8f">{{ d.times }} · {{ d.detail }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- S4 個人資料 -->
+        <sc-if value="{{ empTabProfile }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:20px;font-weight:800;color:#16232f;margin-bottom:16px">個人資料</div>
+
+            <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:16px;padding:22px;margin-bottom:16px;display:flex;flex-direction:column;align-items:center;gap:10px">
+              <div style="width:64px;height:64px;border-radius:50%;background:#0b72b8;color:#fff;font-size:22px;font-weight:800;display:flex;align-items:center;justify-content:center">陳</div>
+              <div style="font-size:17px;font-weight:800;color:#16232f">{{ currentUserName }}</div>
+              <div style="font-size:12.5px;color:#6b7f8f">員工編號 C4T-0021 · 工程部</div>
+              <div style="width:100%;height:1px;background:#eef4f9;margin:6px 0"></div>
+              <div style="width:100%;display:flex;flex-direction:column;gap:10px;font-size:13px;color:#40556a">
+                <div style="display:flex;justify-content:space-between"><span style="color:#9db2c1">職位</span><span style="font-weight:600">軟件工程師</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:#9db2c1">電郵</span><span style="font-weight:600">tai.man@c4t.com</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:#9db2c1">電話</span><span style="font-weight:600">9123 4567</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:#9db2c1">入職日期</span><span style="font-weight:600">2023年3月6日</span></div>
+              </div>
+              <div style="width:100%;height:1px;background:#eef4f9;margin:6px 0"></div>
+              <div style="width:100%">
+                <div style="font-size:12px;color:#9db2c1;margin-bottom:8px">我的工作時間</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                  <span style="font-size:15px;font-weight:800;color:#16232f">{{ myWorkStart }} – {{ myWorkEnd }}</span>
+                </div>
+                <div style="display:flex;gap:6px">
+                  <sc-for list="{{ myWorkDaysDisplay }}" as="wd" hint-placeholder-count="7">
+                    <div style="width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:{{ wd.bg }};color:{{ wd.color }}">{{ wd.label }}</div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+
+            <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:16px;padding:22px">
+              <div style="font-size:14px;font-weight:700;color:#16232f;margin-bottom:14px">更改密碼</div>
+              <sc-if value="{{ pwError }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#fceceb;border:1px solid #f6c9c6;color:#c23b32;font-size:12.5px;font-weight:500;padding:9px 12px;border-radius:7px;margin-bottom:12px">{{ pwError }}</div>
+              </sc-if>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <input type="password" value="{{ pwCurrent }}" onChange="{{ onPwCurrentChange }}" placeholder="目前密碼" style="height:42px;border:1px solid #dbeaf3;border-radius:8px;padding:0 14px;font-size:13.5px;outline:none">
+                <input type="password" value="{{ pwNew }}" onChange="{{ onPwNewChange }}" placeholder="新密碼" style="height:42px;border:1px solid #dbeaf3;border-radius:8px;padding:0 14px;font-size:13.5px;outline:none">
+                <input type="password" value="{{ pwConfirm }}" onChange="{{ onPwConfirmChange }}" placeholder="確認新密碼" style="height:42px;border:1px solid #dbeaf3;border-radius:8px;padding:0 14px;font-size:13.5px;outline:none">
+                <button onClick="{{ onChangePassword }}" style="height:42px;border:none;border-radius:20px;color:#fff;background-image:linear-gradient(30deg,#0400ff,#4ce3f7);background-size:100% auto;font-size:14px;font-weight:700;cursor:pointer" style-hover="background-position:right center;background-size:200% auto;animation:c4t-pulse-blue 1.5s infinite">更新密碼</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="position:sticky;bottom:0;background:#ffffff;border-top:1px solid #e2edf5;display:flex;padding:8px 0 calc(8px + env(safe-area-inset-bottom))">
+        <div onClick="{{ onTabHome }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="{{ tabHomeColor }}" stroke-width="2"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h14V10"></path></svg>
+          <span style="font-size:10.5px;font-weight:700;color:{{ tabHomeColor }}">主頁</span>
+        </div>
+        <div onClick="{{ onTabAttendance }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="{{ tabAttendanceColor }}" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg>
+          <span style="font-size:10.5px;font-weight:700;color:{{ tabAttendanceColor }}">出勤</span>
+        </div>
+        <div onClick="{{ onTabProfile }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="{{ tabProfileColor }}" stroke-width="2"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"></path></svg>
+          <span style="font-size:10.5px;font-weight:700;color:{{ tabProfileColor }}">我</span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ MANAGER PORTAL ============ -->
+  <sc-if value="{{ isManager }}" hint-placeholder-val="{{ false }}">
+    <div style="width:100%;min-height:100vh;display:flex;background:#f2f9ff">
+
+      <div style="width:220px;flex:none;background:#ffffff;border-right:1px solid #e2edf5;display:flex;flex-direction:column;padding:20px 14px">
+        <div style="display:flex;align-items:center;gap:8px;padding:0 8px;margin-bottom:26px">
+          <img src="uploads/c4t-logo-cropped.png" alt="C4T" style="width: 54px; height: 45px; object-fit: contain; mix-blend-mode: multiply">
+          <span style="font-size:16px;font-weight:800;color:#16232f">出勤 App</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <div onClick="{{ onMgrOverview }}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;background:{{ mgrOverviewBg }};color:{{ mgrOverviewColor }};font-size:13.5px;font-weight:700">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ mgrOverviewColor }}" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>
+            總覽
+          </div>
+          <div onClick="{{ onMgrRecords }}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;background:{{ mgrRecordsBg }};color:{{ mgrRecordsColor }};font-size:13.5px;font-weight:700">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ mgrRecordsColor }}" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="7" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="17" y2="16"></line></svg>
+            出勤紀錄
+          </div>
+          <div onClick="{{ onMgrApprovals }}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;background:{{ mgrApprovalsBg }};color:{{ mgrApprovalsColor }};font-size:13.5px;font-weight:700;position:relative">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ mgrApprovalsColor }}" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+            審批
+            <sc-if value="{{ pendingCount }}" hint-placeholder-val="{{ false }}">
+              <span style="margin-left:auto;background:#e0483f;color:#fff;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:9px">{{ pendingCount }}</span>
+            </sc-if>
+          </div>
+          <div onClick="{{ onMgrEmployees }}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;background:{{ mgrEmployeesBg }};color:{{ mgrEmployeesColor }};font-size:13.5px;font-weight:700">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ mgrEmployeesColor }}" stroke-width="2"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"></path><circle cx="18" cy="8" r="2.8"></circle><path d="M15.8 14.7c2.9.4 5.2 2.9 5.2 6.3"></path></svg>
+            員工
+          </div>
+          <div onClick="{{ onMgrSettings }}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;background:{{ mgrSettingsBg }};color:{{ mgrSettingsColor }};font-size:13.5px;font-weight:700">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ mgrSettingsColor }}" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg>
+            設定
+          </div>
+        </div>
+
+        <div style="margin-top:auto;display:flex;flex-direction:column;gap:6px">
+          <div onClick="{{ onLogout }}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;color:#6b7f8f;font-size:13px;font-weight:600">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7f8f" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            登出
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:#ffffff;border-bottom:1px solid #e2edf5">
+          <div style="font-size:19px;font-weight:800;color:#16232f">{{ mgrTabTitle }}</div>
+          <div style="display:flex;align-items:center;gap:16px">
+            <div style="background:#f2f9ff;border:1px solid #dbeaf3;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:600;color:#40556a">{{ todayLabel }}</div>
+            <div style="position:relative">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#6b7f8f" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+              <span style="position:absolute;top:-5px;right:-6px;background:#e0483f;color:#fff;font-size:9.5px;font-weight:700;padding:1px 5px;border-radius:8px">{{ pendingCount }}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:32px;height:32px;border-radius:50%;background:#0b72b8;color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center">J</div>
+              <div>
+                <div style="font-size:12.5px;font-weight:700;color:#16232f;line-height:1.3">Jason Chan</div>
+                <div style="font-size:10.5px;color:#9db2c1;line-height:1.3">管理員</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:1;padding:28px 32px;overflow-y:auto">
+
+          <!-- S5 總覽 -->
+          <sc-if value="{{ mgrTabOverview }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
+                <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;padding:18px">
+                  <div style="font-size:12px;font-weight:600;color:#6b7f8f;margin-bottom:8px">已打卡</div>
+                  <div style="font-size:26px;font-weight:800;color:#16232f">{{ statPunched }}<span style="font-size:13px;color:#9db2c1;font-weight:600"> 人</span></div>
+                </div>
+                <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;padding:18px">
+                  <div style="font-size:12px;font-weight:600;color:#6b7f8f;margin-bottom:8px">已驗證</div>
+                  <div style="font-size:26px;font-weight:800;color:#17a361">{{ statVerified }}<span style="font-size:13px;color:#9db2c1;font-weight:600"> 人</span></div>
+                </div>
+                <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;padding:18px">
+                  <div style="font-size:12px;font-weight:600;color:#6b7f8f;margin-bottom:8px">待審核</div>
+                  <div style="font-size:26px;font-weight:800;color:#d98c0a">{{ pendingCount }}<span style="font-size:13px;color:#9db2c1;font-weight:600"> 人</span></div>
+                </div>
+                <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;padding:18px">
+                  <div style="font-size:12px;font-weight:600;color:#6b7f8f;margin-bottom:8px">已封鎖</div>
+                  <div style="font-size:26px;font-weight:800;color:#e0483f">{{ statBlocked }}<span style="font-size:13px;color:#9db2c1;font-weight:600"> 人</span></div>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:20px;align-items:start">
+                <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;padding:20px">
+                  <div style="font-size:14px;font-weight:700;color:#16232f;margin-bottom:14px">今日即時出勤</div>
+                  <sc-for list="{{ liveAttendance }}" as="row" hint-placeholder-count="6">
+                    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #eef4f9">
+                      <div style="width:32px;height:32px;border-radius:50%;background:#eaf5fc;color:#0b72b8;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none">{{ row.initial }}</div>
+                      <div style="flex:1;min-width:0">
+                        <div style="font-size:13px;font-weight:700;color:#16232f">{{ row.name }}</div>
+                        <div style="font-size:11px;color:#9db2c1">{{ row.dept }}</div>
+                      </div>
+                      <div style="font-size:12px;color:#40556a;font-weight:600;width:100px;text-align:center">{{ row.inout }}</div>
+                      <div style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:{{ row.badgeBg }};color:{{ row.badgeColor }};flex:none">{{ row.badgeLabel }}</div>
+                    </div>
+                  </sc-for>
+
+                  <div style="font-size:12px;font-weight:600;color:#6b7f8f;margin-top:16px;margin-bottom:8px">未打卡</div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <sc-for list="{{ notPunchedChips }}" as="n" hint-placeholder-count="2">
+                      <span style="background:#fdf2df;color:#8a6413;font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:20px">{{ n }}</span>
+                    </sc-for>
+                  </div>
+                </div>
+
+                <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;padding:20px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                    <div style="font-size:14px;font-weight:700;color:#16232f">待審核（前 5）</div>
+                    <span onClick="{{ onMgrApprovals }}" style="font-size:12px;font-weight:600;color:#0b72b8;cursor:pointer">查看全部 →</span>
+                  </div>
+                  <sc-for list="{{ top5Pending }}" as="p" hint-placeholder-count="5">
+                    <div style="border:1px solid #eef4f9;border-radius:10px;padding:12px;margin-bottom:10px">
+                      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">
+                        <div style="font-size:13px;font-weight:700;color:#16232f">{{ p.name }}</div>
+                        <div style="font-size:11px;color:#9db2c1">{{ p.date }} {{ p.time }} · {{ p.type }}</div>
+                      </div>
+                      <div style="font-size:11.5px;color:#c98a1e;margin-bottom:9px">{{ p.reason }}</div>
+                      <div style="display:flex;gap:8px">
+                        <button onClick="{{ p.onApprove }}" style="flex:1;height:30px;border:3px solid #17a361;border-radius:0;background-color:transparent;color:#17a361;font-size:11px;font-weight:700;cursor:pointer;transition:background-color .3s,color .3s" style-hover="background-color:#17a361;color:#fff">批准</button>
+                        <button onClick="{{ p.onBlock }}" style="flex:1;height:30px;border:3px solid #e0483f;border-radius:0;background-color:transparent;color:#e0483f;font-size:11px;font-weight:700;cursor:pointer;transition:background-color .3s,color .3s" style-hover="background-color:#e0483f;color:#fff">封鎖</button>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ noPending }}" hint-placeholder-val="{{ false }}">
+                    <div style="text-align:center;padding:20px 0;color:#9db2c1;font-size:12.5px">暫無待審核項目</div>
+                  </sc-if>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- S6 出勤紀錄 -->
+          <sc-if value="{{ mgrTabRecords }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+                <select value="{{ recordEmployeeFilter }}" onChange="{{ onRecordEmployeeFilterChange }}" style="height:38px;border:1px solid #dbeaf3;border-radius:8px;padding:0 10px;font-size:12.5px;color:#40556a;background:#fff">
+                  <option value="all">全部員工</option>
+                  <sc-for list="{{ recordEmployeeOptions }}" as="opt" hint-placeholder-count="5">
+                    <option value="{{ opt }}">{{ opt }}</option>
+                  </sc-for>
+                </select>
+                <select value="{{ recordStatusFilter }}" onChange="{{ onRecordStatusFilterChange }}" style="height:38px;border:1px solid #dbeaf3;border-radius:8px;padding:0 10px;font-size:12.5px;color:#40556a;background:#fff">
+                  <option value="all">全部狀態</option>
+                  <option value="已驗證">已驗證</option>
+                  <option value="待審核">待審核</option>
+                  <option value="已封鎖">已封鎖</option>
+                </select>
+                <div style="flex:1"></div>
+                <button onClick="{{ onExportCsv }}" style="position:relative;display:flex;justify-content:center;align-items:center;height:38px;border:none;border-radius:8px;padding:0 20px;font-size:12px;font-weight:700;color:#fff;background-color:#307750;overflow:hidden;z-index:1;box-shadow:4px 8px 10px -3px rgba(0,0,0,.356);cursor:pointer;transition:background-color 350ms;gap:6px" style-hover="background-color:#469b61">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13"></path><path d="M7 11l5 5 5-5"></path><path d="M4 21h16"></path></svg>
+                  匯出 CSV
+                </button>
+              </div>
+
+              <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;overflow:hidden">
+                <div style="display:grid;grid-template-columns:110px 1.2fr 1fr 90px 90px 90px 90px 100px;background:#f7fbfd;border-bottom:1px solid #dbeaf3;padding:11px 16px;font-size:11.5px;font-weight:700;color:#6b7f8f">
+                  <div>日期</div><div>員工</div><div>部門</div><div>上班</div><div>下班</div><div>Wi-Fi</div><div>GPS 距離</div><div>狀態</div>
+                </div>
+                <sc-for list="{{ filteredRecords }}" as="r" hint-placeholder-count="8">
+                  <div onClick="{{ r.onSelect }}" style="display:grid;grid-template-columns:110px 1.2fr 1fr 90px 90px 90px 90px 100px;padding:12px 16px;border-bottom:1px solid #eef4f9;font-size:12.5px;color:#16232f;cursor:pointer">
+                    <div style="color:#40556a">{{ r.date }}</div>
+                    <div style="font-weight:600">{{ r.name }}</div>
+                    <div style="color:#6b7f8f">{{ r.dept }}</div>
+                    <div>{{ r.in }}</div>
+                    <div>{{ r.out }}</div>
+                    <div style="color:{{ r.wifiColor }}">{{ r.wifi }}</div>
+                    <div>{{ r.gps }}</div>
+                    <div><span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:{{ r.badgeBg }};color:{{ r.badgeColor }}">{{ r.status }}</span></div>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ filteredRecordsEmpty }}" hint-placeholder-val="{{ false }}">
+                  <div style="text-align:center;padding:30px 0;color:#9db2c1;font-size:12.5px">沒有符合篩選條件的紀錄</div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- S7 審批中心 -->
+          <sc-if value="{{ mgrTabApprovals }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+                <div style="font-size:13px;color:#6b7f8f">共 <strong style="color:#16232f">{{ pendingCount }}</strong> 項待處理</div>
+                <button onClick="{{ onBulkApprove }}" disabled="{{ noPending }}" style="height:36px;border:3px solid #17a361;border-radius:0;background-color:transparent;color:#17a361;padding:0 18px;font-size:12px;font-weight:700;cursor:pointer;transition:background-color .3s,color .3s" style-hover="background-color:#17a361;color:#fff">全部批准</button>
+              </div>
+
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">
+                <sc-for list="{{ pending }}" as="p" hint-placeholder-count="5">
+                  <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;padding:16px">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                      <div style="width:34px;height:34px;border-radius:50%;background:#eaf5fc;color:#0b72b8;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center">{{ p.initials }}</div>
+                      <div style="flex:1">
+                        <div style="font-size:13.5px;font-weight:700;color:#16232f">{{ p.name }}</div>
+                        <div style="font-size:11px;color:#9db2c1">{{ p.dept }} · {{ p.date }} {{ p.time }} · {{ p.type }}</div>
+                      </div>
+                    </div>
+                    <div style="background:#fdf2df;color:#8a6413;font-size:12px;font-weight:600;padding:8px 10px;border-radius:8px;margin-bottom:10px">⚠ {{ p.reason }}</div>
+                    <input type="text" value="{{ p.note }}" onChange="{{ p.onNoteChange }}" placeholder="加入審批備註（選填）" style="width:100%;height:34px;border:1px solid #eef4f9;border-radius:7px;padding:0 10px;font-size:12px;margin-bottom:10px;outline:none">
+                    <div style="display:flex;gap:8px">
+                      <button onClick="{{ p.onApprove }}" style="flex:1;height:34px;border:3px solid #17a361;border-radius:0;background-color:transparent;color:#17a361;font-size:11.5px;font-weight:700;cursor:pointer;transition:background-color .3s,color .3s" style-hover="background-color:#17a361;color:#fff">批准</button>
+                      <button onClick="{{ p.onBlock }}" style="flex:1;height:34px;border:3px solid #e0483f;border-radius:0;background-color:transparent;color:#e0483f;font-size:11.5px;font-weight:700;cursor:pointer;transition:background-color .3s,color .3s" style-hover="background-color:#e0483f;color:#fff">封鎖</button>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ noPending }}" hint-placeholder-val="{{ false }}">
+                <div style="text-align:center;padding:60px 0;color:#9db2c1;font-size:13px">🎉 所有項目已審批完成</div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <!-- S8 員工管理 -->
+          <sc-if value="{{ mgrTabEmployees }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+                <button onClick="{{ onToggleAddEmployee }}" style="height:38px;border:3px solid #0b72b8;border-radius:0;background-color:transparent;color:#0b72b8;padding:0 18px;font-size:12px;font-weight:700;cursor:pointer;transition:background-color .3s,color .3s" style-hover="background-color:#0b72b8;color:#fff">+ 新增員工</button>
+              </div>
+
+              <sc-if value="{{ showAddEmployee }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;padding:18px;margin-bottom:16px">
+                  <div style="font-size:13.5px;font-weight:700;color:#16232f;margin-bottom:12px">新增員工</div>
+                  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px">
+                    <input type="text" value="{{ newEmpName }}" onChange="{{ onNewEmpNameChange }}" placeholder="姓名" style="height:38px;border:1px solid #dbeaf3;border-radius:7px;padding:0 10px;font-size:12.5px;outline:none">
+                    <input type="text" value="{{ newEmpDept }}" onChange="{{ onNewEmpDeptChange }}" placeholder="部門" style="height:38px;border:1px solid #dbeaf3;border-radius:7px;padding:0 10px;font-size:12.5px;outline:none">
+                    <input type="text" value="{{ newEmpPos }}" onChange="{{ onNewEmpPosChange }}" placeholder="職位" style="height:38px;border:1px solid #dbeaf3;border-radius:7px;padding:0 10px;font-size:12.5px;outline:none">
+                    <input type="text" value="{{ newEmpEmail }}" onChange="{{ onNewEmpEmailChange }}" placeholder="電郵" style="height:38px;border:1px solid #dbeaf3;border-radius:7px;padding:0 10px;font-size:12.5px;outline:none">
+                  </div>
+                  <div style="display:flex;gap:8px;justify-content:flex-end">
+                    <button onClick="{{ onToggleAddEmployee }}" style="height:34px;border:3px solid #6b7f8f;border-radius:0;background-color:transparent;color:#6b7f8f;padding:0 16px;font-size:11.5px;font-weight:700;cursor:pointer;transition:background-color .3s,color .3s" style-hover="background-color:#6b7f8f;color:#fff">取消</button>
+                    <button onClick="{{ onAddEmployee }}" style="height:34px;border:3px solid #0b72b8;border-radius:0;background-color:transparent;color:#0b72b8;padding:0 16px;font-size:11.5px;font-weight:700;cursor:pointer;transition:background-color .3s,color .3s" style-hover="background-color:#0b72b8;color:#fff">儲存</button>
+                  </div>
+                </div>
+              </sc-if>
+
+              <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;overflow-x:auto">
+                <div style="display:grid;grid-template-columns:150px 110px 130px 200px 140px 90px 80px 170px;min-width:1070px;background:#f7fbfd;border-bottom:1px solid #dbeaf3;padding:11px 16px;font-size:11.5px;font-weight:700;color:#6b7f8f">
+                  <div>姓名</div><div>部門</div><div>職位</div><div>電郵</div><div>工作時間</div><div>角色</div><div>狀態</div><div>操作</div>
+                </div>
+                <sc-for list="{{ employees }}" as="e" hint-placeholder-count="6">
+                  <div style="display:grid;grid-template-columns:150px 110px 130px 200px 140px 90px 80px 170px;min-width:1070px;padding:12px 16px;border-bottom:1px solid #eef4f9;font-size:12.5px;color:#16232f;align-items:center">
+                    <div style="font-weight:600">{{ e.name }}</div>
+                    <div style="color:#6b7f8f">{{ e.dept }}</div>
+                    <div style="color:#6b7f8f">{{ e.pos }}</div>
+                    <div style="color:#6b7f8f">{{ e.email }}</div>
+                    <div style="color:#40556a;font-size:12px">
+                      <div style="font-weight:600">{{ e.scheduleTimeLabel }}</div>
+                      <div style="font-size:10.5px;color:#9db2c1;margin-top:2px">{{ e.scheduleDaysLabel }}</div>
+                    </div>
+                    <div onClick="{{ e.onToggleRole }}" style="cursor:pointer"><span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:{{ e.roleBg }};color:{{ e.roleColor }}">{{ e.roleLabel }}</span></div>
+                    <div><span style="font-size:11px;font-weight:700;color:{{ e.activeColor }}">{{ e.activeLabel }}</span></div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                      <span onClick="{{ e.onEditSchedule }}" style="font-size:11.5px;font-weight:600;color:#307750;cursor:pointer">編輯工時</span>
+                      <span onClick="{{ e.onResetPw }}" style="font-size:11.5px;font-weight:600;color:#0b72b8;cursor:pointer">重設密碼</span>
+                      <span onClick="{{ e.onToggleActive }}" style="font-size:11.5px;font-weight:600;color:#e0483f;cursor:pointer">{{ e.toggleActiveLabel }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- S9 系統設定 -->
+          <sc-if value="{{ mgrTabSettings }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:20px;max-width:920px">
+              <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;padding:22px">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+                  <span style="width:22px;height:22px;border-radius:50%;background:#0b72b8;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center">1</span>
+                  <div style="font-size:14.5px;font-weight:700;color:#16232f">辦公室 Wi-Fi 設定</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+                  <div style="display:flex;flex-direction:column;gap:14px">
+                    <div>
+                      <label style="font-size:12px;font-weight:600;color:#40556a;display:block;margin-bottom:6px">Wi-Fi SSID（網絡名稱）</label>
+                      <input type="text" value="{{ ssid }}" onChange="{{ onSsidChange }}" style="width:100%;height:40px;border:1px solid #dbeaf3;border-radius:8px;padding:0 12px;font-size:13px;outline:none">
+                    </div>
+                    <div>
+                      <label style="font-size:12px;font-weight:600;color:#40556a;display:block;margin-bottom:6px">網關 / 網絡識別符（Gateway）</label>
+                      <input type="text" value="{{ gateway }}" onChange="{{ onGatewayChange }}" style="width:100%;height:40px;border:1px solid #dbeaf3;border-radius:8px;padding:0 12px;font-size:13px;outline:none">
+                    </div>
+                  </div>
+                  <div style="background:#e6f7ef;border:1px solid #cdeedd;border-radius:10px;padding:14px;display:flex;flex-direction:column;justify-content:center;gap:6px">
+                    <div style="display:flex;align-items:center;gap:6px;color:#17a361;font-size:13px;font-weight:700">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#17a361" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 11 15 16 9"></polyline></svg>
+                      連線測試成功
+                    </div>
+                    <div style="font-size:11px;color:#4a8f6b">最後測試：2026-07-11 10:30</div>
+                    <button onClick="{{ onRetestWifi }}" style="align-self:flex-start;margin-top:4px;height:28px;border:3px solid #17a361;border-radius:0;background-color:transparent;color:#17a361;padding:0 12px;font-size:11px;font-weight:700;cursor:pointer;transition:background-color .3s,color .3s" style-hover="background-color:#17a361;color:#fff">重新測試</button>
+                  </div>
+                </div>
+              </div>
+
+              <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;padding:22px">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+                  <span style="width:22px;height:22px;border-radius:50%;background:#0b72b8;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center">2</span>
+                  <div style="font-size:14.5px;font-weight:700;color:#16232f">辦公室位置與 Geofence</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+                  <div style="display:flex;flex-direction:column;gap:14px">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                      <div>
+                        <label style="font-size:12px;font-weight:600;color:#40556a;display:block;margin-bottom:6px">緯度 (Latitude)</label>
+                        <input type="text" value="{{ officeLat }}" onChange="{{ onOfficeLatChange }}" style="width:100%;height:40px;border:1px solid #dbeaf3;border-radius:8px;padding:0 12px;font-size:13px;outline:none">
+                      </div>
+                      <div>
+                        <label style="font-size:12px;font-weight:600;color:#40556a;display:block;margin-bottom:6px">經度 (Longitude)</label>
+                        <input type="text" value="{{ officeLng }}" onChange="{{ onOfficeLngChange }}" style="width:100%;height:40px;border:1px solid #dbeaf3;border-radius:8px;padding:0 12px;font-size:13px;outline:none">
+                      </div>
+                    </div>
+                    <div>
+                      <label style="font-size:12px;font-weight:600;color:#40556a;display:block;margin-bottom:6px">辦公室地址</label>
+                      <input type="text" value="{{ officeAddress }}" onChange="{{ onOfficeAddressChange }}" style="width:100%;height:40px;border:1px solid #dbeaf3;border-radius:8px;padding:0 12px;font-size:13px;outline:none">
+                    </div>
+                    <div>
+                      <label style="font-size:12px;font-weight:600;color:#40556a;display:block;margin-bottom:6px">Geofence 半徑 (米) · 建議 50–300 米</label>
+                      <input type="range" min="50" max="500" value="{{ geofenceRadius }}" onChange="{{ onGeofenceRadiusChange }}" style="width:100%">
+                    </div>
+                  </div>
+                  <div style="background:repeating-linear-gradient(45deg,#eef4f9,#eef4f9 8px,#f7fbfd 8px,#f7fbfd 16px);border:1px solid #dbeaf3;border-radius:10px;position:relative;display:flex;align-items:center;justify-content:center;min-height:180px">
+                    <div style="width:88px;height:88px;border-radius:50%;background:rgba(11,114,184,.16);border:1px solid rgba(11,114,184,.4);display:flex;align-items:center;justify-content:center">
+                      <div style="width:10px;height:10px;border-radius:50%;background:#0b72b8;box-shadow:0 0 0 4px rgba(11,114,184,.25)"></div>
+                    </div>
+                    <div style="position:absolute;bottom:8px;left:10px;font-family:monospace;font-size:10.5px;color:#8095a5">地圖預覽 · Geofence {{ geofenceRadius }} 米</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="background:#ffffff;border:1px solid #dbeaf3;border-radius:12px;padding:22px">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+                  <span style="width:22px;height:22px;border-radius:50%;background:#0b72b8;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center">3</span>
+                  <div style="font-size:14.5px;font-weight:700;color:#16232f">出勤規則</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:24px;align-items:center">
+                  <div style="display:flex;gap:10px;align-items:end">
+                    <div>
+                      <label style="font-size:12px;font-weight:600;color:#40556a;display:block;margin-bottom:6px">標準工作時間</label>
+                      <div style="display:flex;align-items:center;gap:6px">
+                        <input type="text" value="{{ workStart }}" onChange="{{ onWorkStartChange }}" style="width:64px;height:38px;border:1px solid #dbeaf3;border-radius:7px;text-align:center;font-size:12.5px;outline:none">
+                        <span style="color:#9db2c1">—</span>
+                        <input type="text" value="{{ workEnd }}" onChange="{{ onWorkEndChange }}" style="width:64px;height:38px;border:1px solid #dbeaf3;border-radius:7px;text-align:center;font-size:12.5px;outline:none">
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label style="font-size:12px;font-weight:600;color:#40556a;display:block;margin-bottom:6px">容許遲到上限（分鐘）</label>
+                    <input type="text" value="{{ lateTolerance }}" onChange="{{ onLateToleranceChange }}" style="width:80px;height:38px;border:1px solid #dbeaf3;border-radius:7px;text-align:center;font-size:12.5px;outline:none">
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div onClick="{{ onToggleSingleSignal }}" style="width:38px;height:22px;border-radius:12px;background:{{ singleSignalBg }};position:relative;cursor:pointer;flex:none">
+                      <div style="position:absolute;top:2px;left:{{ singleSignalKnobLeft }};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .15s"></div>
+                    </div>
+                    <div style="font-size:11.5px;color:#40556a;line-height:1.5">單一訊號通過即為「已驗證」</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px;justify-content:flex-end">
+                <button onClick="{{ onResetSettings }}" style="height:40px;border:3px solid #6b7f8f;border-radius:0;background-color:transparent;color:#6b7f8f;padding:0 22px;font-size:12px;font-weight:700;cursor:pointer;transition:background-color .3s,color .3s" style-hover="background-color:#6b7f8f;color:#fff">重設</button>
+                <button onClick="{{ onSaveSettings }}" style="height:40px;border:3px solid #0b72b8;border-radius:0;background-color:transparent;color:#0b72b8;padding:0 22px;font-size:12px;font-weight:700;cursor:pointer;transition:background-color .3s,color .3s" style-hover="background-color:#0b72b8;color:#fff">儲存設定</button>
+              </div>
+            </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </div>
+
+    <sc-if value="{{ scheduleEmp }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ onCloseSchedule }}" style="position:fixed;inset:0;background:rgba(20,35,50,.35);z-index:100;display:flex;justify-content:flex-end">
+        <div onClick="{{ stopPropagation }}" style="width:400px;height:100%;background:#ffffff;box-shadow:-8px 0 24px rgba(0,0,0,.1);padding:26px;overflow-y:auto">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-size:16px;font-weight:800;color:#16232f">編輯工作時間</div>
+            <span onClick="{{ onCloseSchedule }}" style="cursor:pointer;color:#9db2c1;font-size:20px;line-height:1">×</span>
+          </div>
+          <div style="font-size:12.5px;color:#6b7f8f;margin-bottom:20px">{{ scheduleEmp.name }} · {{ scheduleEmp.dept }}</div>
+
+          <div style="margin-bottom:20px">
+            <label style="font-size:12px;font-weight:600;color:#40556a;display:block;margin-bottom:8px">上班 — 下班時間</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="text" value="{{ scheduleDraft.workStart }}" onChange="{{ onScheduleStartChange }}" style="width:80px;height:40px;border:1px solid #dbeaf3;border-radius:8px;text-align:center;font-size:13px;outline:none">
+              <span style="color:#9db2c1">—</span>
+              <input type="text" value="{{ scheduleDraft.workEnd }}" onChange="{{ onScheduleEndChange }}" style="width:80px;height:40px;border:1px solid #dbeaf3;border-radius:8px;text-align:center;font-size:13px;outline:none">
+            </div>
+          </div>
+
+          <div style="margin-bottom:8px">
+            <label style="font-size:12px;font-weight:600;color:#40556a;display:block;margin-bottom:8px">工作日（點擊切換：全日 / 半日 / 休息）</label>
+            <div style="display:flex;gap:8px">
+              <sc-for list="{{ scheduleDraftDays }}" as="wd" hint-placeholder-count="7">
+                <div onClick="{{ wd.onCycle }}" style="width:44px;height:52px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;background:{{ wd.bg }};color:{{ wd.color }};border:1px solid {{ wd.border }}">
+                  <span style="font-size:11.5px;font-weight:700">{{ wd.label }}</span>
+                  <span style="font-size:9.5px;font-weight:600">{{ wd.subLabel }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="font-size:11px;color:#9db2c1;margin-top:10px">每週工作日數：{{ scheduleDraftTotalDays }} 日</div>
+          </div>
+
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:24px">
+            <button onClick="{{ onCloseSchedule }}" style="height:36px;border:3px solid #6b7f8f;border-radius:0;background-color:transparent;color:#6b7f8f;padding:0 16px;font-size:11.5px;font-weight:700;cursor:pointer;transition:background-color .3s,color .3s" style-hover="background-color:#6b7f8f;color:#fff">取消</button>
+            <button onClick="{{ onSaveSchedule }}" style="height:36px;border:3px solid #0b72b8;border-radius:0;background-color:transparent;color:#0b72b8;padding:0 16px;font-size:11.5px;font-weight:700;cursor:pointer;transition:background-color .3s,color .3s" style-hover="background-color:#0b72b8;color:#fff">儲存</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ selectedRecord }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ onCloseDrawer }}" style="position:fixed;inset:0;background:rgba(20,35,50,.35);z-index:100;display:flex;justify-content:flex-end">
+        <div onClick="{{ stopPropagation }}" style="width:380px;height:100%;background:#ffffff;box-shadow:-8px 0 24px rgba(0,0,0,.1);padding:26px;overflow-y:auto">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+            <div style="font-size:16px;font-weight:800;color:#16232f">出勤紀錄詳情</div>
+            <span onClick="{{ onCloseDrawer }}" style="cursor:pointer;color:#9db2c1;font-size:20px;line-height:1">×</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px;font-size:13px">
+            <div style="display:flex;justify-content:space-between"><span style="color:#9db2c1">員工</span><span style="font-weight:700;color:#16232f">{{ selectedRecord.name }}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:#9db2c1">部門</span><span style="font-weight:600;color:#40556a">{{ selectedRecord.dept }}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:#9db2c1">日期</span><span style="font-weight:600;color:#40556a">{{ selectedRecord.date }}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:#9db2c1">上班時間</span><span style="font-weight:600;color:#40556a">{{ selectedRecord.in }}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:#9db2c1">下班時間</span><span style="font-weight:600;color:#40556a">{{ selectedRecord.out }}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:#9db2c1">Wi-Fi 驗證</span><span style="font-weight:600;color:{{ selectedRecord.wifiColor }}">{{ selectedRecord.wifi }}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:#9db2c1">GPS 距離</span><span style="font-weight:600;color:#40556a">{{ selectedRecord.gps }}</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:#9db2c1">狀態</span><span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:{{ selectedRecord.badgeBg }};color:{{ selectedRecord.badgeColor }}">{{ selectedRecord.status }}</span></div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </sc-if>
+
+<div style="min-height:100vh;width:100%;display:flex;align-items:center;justify-content:center;padding:24px">
+      
+    </div></div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    screen: 'login',
+    loginEmail: '',
+    loginPassword: '',
+    loginError: '',
+    empTab: 'home',
+    mgrTab: 'overview',
+    punchStatus: 'none',
+    wifiState: 'idle',
+    gpsState: 'idle',
+    punchInTime: null,
+    punchOutTime: null,
+    toast: null,
+    pwCurrent: '', pwNew: '', pwConfirm: '', pwError: '',
+    recordEmployeeFilter: 'all',
+    recordStatusFilter: 'all',
+    selectedRecordId: null,
+    showAddEmployee: false,
+    newEmpName: '', newEmpDept: '', newEmpPos: '', newEmpEmail: '',
+    ssid: 'C4T-Office', gateway: '10.10.1.1',
+    officeLat: '22.3193', officeLng: '114.1694', officeAddress: '香港九龍觀塘道 388 號 C4T 大廈 12 樓',
+    geofenceRadius: 150,
+    workStart: '09:00', workEnd: '18:00', lateTolerance: '10',
+    singleSignal: true,
+    pending: [
+      { id: 1, name: '黃志強', initials: '黃', dept: '銷售部', date: '07/11', time: '09:14', type: '上班打卡', reason: 'Wi-Fi 未連接、GPS 距離 850 米', note: '' },
+      { id: 2, name: '林俊傑', initials: '林', dept: '財務部', date: '07/11', time: '08:58', type: '上班打卡', reason: 'Wi-Fi 未連接', note: '' },
+      { id: 3, name: '張淑芬', initials: '張', dept: '人力資源部', date: '07/10', time: '18:32', type: '下班打卡', reason: 'GPS 距離 620 米', note: '' },
+      { id: 4, name: '李美玲', initials: '李', dept: '市場部', date: '07/11', time: '09:05', type: '上班打卡', reason: 'GPS 定位逾時', note: '' },
+      { id: 5, name: '王家豪', initials: '王', dept: '銷售部', date: '07/11', time: '09:20', type: '上班打卡', reason: 'Wi-Fi 未連接、GPS 距離 1.2 公里', note: '' },
+    ],
+    employees: [
+      { id: 1, name: '陳大文', dept: '工程部', pos: '軟件工程師', email: 'tai.man@c4t.com', role: 'employee', active: true, workStart: '09:30', workEnd: '18:30', workDays: [0, 1, 1, 1, 1, 1, 0.5] },
+      { id: 2, name: '李美玲', dept: '市場部', pos: '市場主任', email: 'mei.ling@c4t.com', role: 'employee', active: true, workStart: '09:00', workEnd: '18:00', workDays: [0, 1, 1, 1, 1, 1, 0] },
+      { id: 3, name: '黃志強', dept: '銷售部', pos: '銷售經理', email: 'chi.keung@c4t.com', role: 'employee', active: true, workStart: '10:00', workEnd: '19:00', workDays: [0, 1, 1, 1, 1, 1, 0] },
+      { id: 4, name: '張淑芬', dept: '人力資源部', pos: '人力資源主任', email: 'shuk.fan@c4t.com', role: 'employee', active: true, workStart: '09:00', workEnd: '18:00', workDays: [0, 1, 1, 1, 1, 1, 0] },
+      { id: 5, name: '林俊傑', dept: '財務部', pos: '會計主任', email: 'chun.kit@c4t.com', role: 'employee', active: false, workStart: '09:00', workEnd: '18:00', workDays: [0, 1, 1, 1, 1, 1, 0] },
+      { id: 6, name: 'Jason Chan', dept: '管理部', pos: '系統管理員', email: 'jason.chan@c4t.com', role: 'admin', active: true, workStart: '09:00', workEnd: '18:00', workDays: [0, 1, 1, 1, 1, 1, 0] },
+    ],
+    scheduleEmpId: null,
+    scheduleDraft: { workStart: '09:00', workEnd: '18:00', workDays: [0, 1, 1, 1, 1, 1, 0] },
+  };
+
+  dayLabels = ['日', '一', '二', '三', '四', '五', '六'];
+
+  records = [
+    { id: 1, date: '07/11', name: '陳大文', dept: '工程部', in: '09:02', out: '--', wifi: '已連接', gps: '15 米', status: '已驗證' },
+    { id: 2, date: '07/11', name: '李美玲', dept: '市場部', in: '09:05', out: '--', wifi: '未連接', gps: '210 米', status: '待審核' },
+    { id: 3, date: '07/11', name: '黃志強', dept: '銷售部', in: '09:14', out: '--', wifi: '未連接', gps: '850 米', status: '待審核' },
+    { id: 4, date: '07/10', name: '張淑芬', dept: '人力資源部', in: '08:55', out: '18:02', wifi: '已連接', gps: '20 米', status: '已驗證' },
+    { id: 5, date: '07/10', name: '陳大文', dept: '工程部', in: '09:00', out: '18:05', wifi: '已連接', gps: '18 米', status: '已驗證' },
+    { id: 6, date: '07/09', name: '林俊傑', dept: '財務部', in: '09:10', out: '18:00', wifi: '未連接', gps: '1200 米', status: '已封鎖' },
+    { id: 7, date: '07/09', name: '黃志強', dept: '銷售部', in: '08:58', out: '18:10', wifi: '已連接', gps: '25 米', status: '已驗證' },
+    { id: 8, date: '07/08', name: '李美玲', dept: '市場部', in: '09:03', out: '18:00', wifi: '已連接', gps: '30 米', status: '已驗證' },
+  ];
+
+  last7 = [
+    { date: '07/04', times: '08:59 - 18:10', detail: 'GPS 定位逾時', badgeLabel: '待審核', badgeBg: '#fdf2df', badgeColor: '#d98c0a' },
+    { date: '07/05', times: '週末', detail: '無需打卡', badgeLabel: '休息', badgeBg: '#eef4f9', badgeColor: '#9db2c1' },
+    { date: '07/06', times: '週末', detail: '無需打卡', badgeLabel: '休息', badgeBg: '#eef4f9', badgeColor: '#9db2c1' },
+    { date: '07/07', times: '09:01 - 17:58', detail: 'Wi-Fi 已連接', badgeLabel: '已驗證', badgeBg: '#e6f7ef', badgeColor: '#17a361' },
+    { date: '07/08', times: '09:05 - 18:00', detail: 'Wi-Fi 已連接', badgeLabel: '已驗證', badgeBg: '#e6f7ef', badgeColor: '#17a361' },
+    { date: '07/09', times: '08:58 - 18:02', detail: 'GPS 距離 18 米', badgeLabel: '已驗證', badgeBg: '#e6f7ef', badgeColor: '#17a361' },
+    { date: '07/10', times: '09:00 - 18:05', detail: 'Wi-Fi 已連接', badgeLabel: '已驗證', badgeBg: '#e6f7ef', badgeColor: '#17a361' },
+  ];
+
+  liveAttendanceSeed = [
+    { name: '陳大文', dept: '工程部', in: '09:02', out: '--', status: '已驗證' },
+    { name: '李美玲', dept: '市場部', in: '09:05', out: '--', status: '待審核' },
+    { name: '黃志強', dept: '銷售部', in: '09:14', out: '--', status: '待審核' },
+    { name: '張淑芬', dept: '人力資源部', in: '08:55', out: '18:02', status: '已驗證' },
+    { name: '林俊傑', dept: '財務部', in: '08:58', out: '--', status: '待審核' },
+    { name: 'Jason Chan', dept: '管理部', in: '08:47', out: '--', status: '已驗證' },
+  ];
+
+  notPunched = ['周美芳', '陳志豪'];
+
+  showToast(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => this.setState({ toast: null }), 2200);
+  }
+
+  onEmailChange = (e) => this.setState({ loginEmail: e.target.value, loginError: '' });
+  onPasswordChange = (e) => this.setState({ loginPassword: e.target.value, loginError: '' });
+
+  onLogin = () => {
+    const { loginEmail, loginPassword } = this.state;
+    if (!loginEmail.trim() || !loginPassword.trim()) {
+      this.setState({ loginError: '請輸入電郵及密碼' });
+      return;
+    }
+    const isAdmin = loginEmail.toLowerCase().includes('admin') || loginEmail.toLowerCase().includes('jason');
+    this.setState({ screen: isAdmin ? 'manager' : 'employee', loginError: '' });
+  };
+
+  onLogout = () => this.setState({ screen: 'login', loginEmail: '', loginPassword: '' });
+
+  onTabHome = () => this.setState({ empTab: 'home' });
+  onTabAttendance = () => this.setState({ empTab: 'attendance' });
+  onTabProfile = () => this.setState({ empTab: 'profile' });
+
+  onMgrOverview = () => this.setState({ mgrTab: 'overview' });
+  onMgrRecords = () => this.setState({ mgrTab: 'records' });
+  onMgrApprovals = () => this.setState({ mgrTab: 'approvals' });
+  onMgrEmployees = () => this.setState({ mgrTab: 'employees' });
+  onMgrSettings = () => this.setState({ mgrTab: 'settings' });
+
+  onPunch = () => {
+    const { punchStatus } = this.state;
+    if (punchStatus === 'done' || punchStatus === 'checking') return;
+    this.setState({ punchStatus: 'checking', wifiState: 'checking', gpsState: 'checking' });
+    clearTimeout(this._punchTimer);
+    this._punchTimer = setTimeout(() => {
+      const now = new Date();
+      const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+      if (this.state.wifiState !== 'checking') return;
+      if (punchStatus === 'none') {
+        this.setState({ wifiState: 'ok', gpsState: 'ok', punchStatus: 'in', punchInTime: time });
+        this.showToast('上班打卡成功，已驗證');
+      } else if (punchStatus === 'in') {
+        this.setState({ wifiState: 'ok', gpsState: 'ok', punchStatus: 'done', punchOutTime: time });
+        this.showToast('下班打卡成功，已驗證');
+      }
+    }, 1200);
+  };
+
+  onPwCurrentChange = (e) => this.setState({ pwCurrent: e.target.value, pwError: '' });
+  onPwNewChange = (e) => this.setState({ pwNew: e.target.value, pwError: '' });
+  onPwConfirmChange = (e) => this.setState({ pwConfirm: e.target.value, pwError: '' });
+  onChangePassword = () => {
+    const { pwCurrent, pwNew, pwConfirm } = this.state;
+    if (!pwCurrent || !pwNew || !pwConfirm) { this.setState({ pwError: '請填寫所有欄位' }); return; }
+    if (pwNew !== pwConfirm) { this.setState({ pwError: '新密碼與確認密碼不一致' }); return; }
+    this.setState({ pwCurrent: '', pwNew: '', pwConfirm: '', pwError: '' });
+    this.showToast('密碼已更新');
+  };
+
+  approvePending = (id) => {
+    this.setState(s => ({ pending: s.pending.filter(p => p.id !== id) }));
+    this.showToast('已批准');
+  };
+  blockPending = (id) => {
+    this.setState(s => ({ pending: s.pending.filter(p => p.id !== id) }));
+    this.showToast('已封鎖');
+  };
+  onBulkApprove = () => {
+    if (!this.state.pending.length) return;
+    this.setState({ pending: [] });
+    this.showToast('已批准全部項目');
+  };
+  onNotePendingChange = (id, val) => {
+    this.setState(s => ({ pending: s.pending.map(p => p.id === id ? { ...p, note: val } : p) }));
+  };
+
+  onRecordEmployeeFilterChange = (e) => this.setState({ recordEmployeeFilter: e.target.value });
+  onRecordStatusFilterChange = (e) => this.setState({ recordStatusFilter: e.target.value });
+
+  getFilteredRecords() {
+    const { recordEmployeeFilter, recordStatusFilter } = this.state;
+    return this.records.filter(r =>
+      (recordEmployeeFilter === 'all' || r.name === recordEmployeeFilter) &&
+      (recordStatusFilter === 'all' || r.status === recordStatusFilter)
+    );
+  }
+
+  onExportCsv = () => {
+    const rows = this.getFilteredRecords();
+    const header = ['日期', '員工', '部門', '上班', '下班', 'Wi-Fi', 'GPS距離', '狀態'];
+    const lines = [header.join(',')].concat(rows.map(r => [r.date, r.name, r.dept, r.in, r.out, r.wifi, r.gps, r.status].join(',')));
+    const csv = '\uFEFF' + lines.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'attendance_records.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    this.showToast('已匯出 CSV');
+  };
+
+  onSelectRecord = (id) => this.setState({ selectedRecordId: id });
+  onCloseDrawer = () => this.setState({ selectedRecordId: null });
+  stopPropagation = (e) => e.stopPropagation();
+
+  onToggleAddEmployee = () => this.setState(s => ({ showAddEmployee: !s.showAddEmployee, newEmpName: '', newEmpDept: '', newEmpPos: '', newEmpEmail: '' }));
+  onNewEmpNameChange = (e) => this.setState({ newEmpName: e.target.value });
+  onNewEmpDeptChange = (e) => this.setState({ newEmpDept: e.target.value });
+  onNewEmpPosChange = (e) => this.setState({ newEmpPos: e.target.value });
+  onNewEmpEmailChange = (e) => this.setState({ newEmpEmail: e.target.value });
+  onAddEmployee = () => {
+    const { newEmpName, newEmpDept, newEmpPos, newEmpEmail } = this.state;
+    if (!newEmpName.trim()) return;
+    this.setState(s => ({
+      employees: [...s.employees, { id: Date.now(), name: newEmpName, dept: newEmpDept || '未分配', pos: newEmpPos || '員工', email: newEmpEmail || '-', role: 'employee', active: true }],
+      showAddEmployee: false,
+    }));
+    this.showToast('已新增員工');
+  };
+  toggleEmpRole = (id) => this.setState(s => ({ employees: s.employees.map(e => e.id === id ? { ...e, role: e.role === 'admin' ? 'employee' : 'admin' } : e) }));
+  toggleEmpActive = (id) => this.setState(s => ({ employees: s.employees.map(e => e.id === id ? { ...e, active: !e.active } : e) }));
+  resetEmpPw = (name) => this.showToast(`已重設 ${name} 的密碼`);
+
+  onEditSchedule = (id) => {
+    const emp = this.state.employees.find(e => e.id === id);
+    if (!emp) return;
+    this.setState({ scheduleEmpId: id, scheduleDraft: { workStart: emp.workStart, workEnd: emp.workEnd, workDays: [...emp.workDays] } });
+  };
+  onCloseSchedule = () => this.setState({ scheduleEmpId: null });
+  onScheduleStartChange = (e) => this.setState(s => ({ scheduleDraft: { ...s.scheduleDraft, workStart: e.target.value } }));
+  onScheduleEndChange = (e) => this.setState(s => ({ scheduleDraft: { ...s.scheduleDraft, workEnd: e.target.value } }));
+  onCycleScheduleDay = (idx) => {
+    this.setState(s => {
+      const days = [...s.scheduleDraft.workDays];
+      const cur = days[idx];
+      days[idx] = cur === 1 ? 0.5 : cur === 0.5 ? 0 : 1;
+      return { scheduleDraft: { ...s.scheduleDraft, workDays: days } };
+    });
+  };
+  onSaveSchedule = () => {
+    const { scheduleEmpId, scheduleDraft } = this.state;
+    this.setState(s => ({
+      employees: s.employees.map(e => e.id === scheduleEmpId ? { ...e, workStart: scheduleDraft.workStart, workEnd: scheduleDraft.workEnd, workDays: [...scheduleDraft.workDays] } : e),
+      scheduleEmpId: null,
+    }));
+    this.showToast('工作時間已更新');
+  };
+
+  onSsidChange = (e) => this.setState({ ssid: e.target.value });
+  onGatewayChange = (e) => this.setState({ gateway: e.target.value });
+  onOfficeLatChange = (e) => this.setState({ officeLat: e.target.value });
+  onOfficeLngChange = (e) => this.setState({ officeLng: e.target.value });
+  onOfficeAddressChange = (e) => this.setState({ officeAddress: e.target.value });
+  onGeofenceRadiusChange = (e) => this.setState({ geofenceRadius: Number(e.target.value) });
+  onWorkStartChange = (e) => this.setState({ workStart: e.target.value });
+  onWorkEndChange = (e) => this.setState({ workEnd: e.target.value });
+  onLateToleranceChange = (e) => this.setState({ lateTolerance: e.target.value });
+  onToggleSingleSignal = () => this.setState(s => ({ singleSignal: !s.singleSignal }));
+  onRetestWifi = () => this.showToast('連線測試成功');
+  onResetSettings = () => this.showToast('設定已重設');
+  onSaveSettings = () => this.showToast('設定已儲存');
+
+  renderVals() {
+    const s = this.state;
+
+    const wifiColorMap = { idle: '#9db2c1', checking: '#d98c0a', ok: '#17a361', failed: '#e0483f' };
+    const wifiLabelMap = { idle: '待檢查', checking: '檢查中…', ok: '已連接', failed: '未連接' };
+    const gpsColorMap = { idle: '#9db2c1', checking: '#d98c0a', ok: '#17a361', failed: '#e0483f' };
+    const gpsLabelMap = { idle: '待檢查', checking: '定位中…', ok: '已核實', failed: '未能核實' };
+
+    const wifiColor = wifiColorMap[s.wifiState];
+    const gpsColor = gpsColorMap[s.gpsState];
+
+    const punchDisabled = s.punchStatus === 'done' || s.punchStatus === 'checking';
+    let punchButtonLabel = '上班打卡';
+    if (s.punchStatus === 'checking') punchButtonLabel = '驗證中…';
+    else if (s.punchStatus === 'in') punchButtonLabel = '下班打卡';
+    else if (s.punchStatus === 'done') punchButtonLabel = '今日完成 ✓';
+
+    const punchButtonStyle = `width:100%;height:52px;border:none;border-radius:20px;font-size:16px;font-weight:800;cursor:${punchDisabled ? 'default' : 'pointer'};color:#fff;background-image:linear-gradient(30deg,${s.punchStatus === 'done' ? '#5c7285,#9db2c1' : '#0400ff,#4ce3f7'});background-size:100% auto`;
+
+    const empTab = s.empTab;
+    const mgrTab = s.mgrTab;
+
+    const tabColor = (name) => empTab === name ? '#0b72b8' : '#9db2c1';
+    const mgrBg = (name) => mgrTab === name ? '#eaf5fc' : 'transparent';
+    const mgrColor = (name) => mgrTab === name ? '#0b72b8' : '#40556a';
+
+    const mgrTitles = { overview: '管理員總覽', records: '出勤紀錄', approvals: '審批中心', employees: '員工管理', settings: '系統設定' };
+
+    // calendar
+    const overrides = { 3: 'pending', 7: 'absent', 9: 'pending' };
+    const calendarDays = [];
+    for (let d = 1; d <= 31; d++) {
+      const dow = new Date(2026, 6, d).getDay();
+      let status = 'future';
+      if (d <= 11) {
+        if (dow === 0 || dow === 6) status = 'off';
+        else status = overrides[d] || 'ok';
+      }
+      const dotColor = status === 'ok' ? '#17a361' : status === 'pending' ? '#d98c0a' : status === 'absent' ? '#e0483f' : null;
+      calendarDays.push({
+        day: d,
+        hasDot: !!dotColor,
+        dotColor,
+        bg: d === 11 ? '#eaf5fc' : 'transparent',
+        textColor: status === 'future' ? '#c7d5de' : status === 'off' ? '#b8c6d1' : '#16232f',
+      });
+    }
+    const monthOkCount = calendarDays.filter(c => c.dotColor === '#17a361').length;
+    const monthPendingCount = calendarDays.filter(c => c.dotColor === '#d98c0a').length;
+    const monthAbsentCount = calendarDays.filter(c => c.dotColor === '#e0483f').length;
+
+    const badgeColors = {
+      '已驗證': { bg: '#e6f7ef', color: '#17a361' },
+      '待審核': { bg: '#fdf2df', color: '#d98c0a' },
+      '已封鎖': { bg: '#fceceb', color: '#e0483f' },
+      '正常': { bg: '#e6f7ef', color: '#17a361' },
+    };
+
+    const filteredRecordsRaw = this.getFilteredRecords();
+    const filteredRecords = filteredRecordsRaw.map(r => ({
+      ...r,
+      wifiColor: r.wifi === '已連接' ? '#17a361' : '#e0483f',
+      badgeBg: badgeColors[r.status].bg,
+      badgeColor: badgeColors[r.status].color,
+      onSelect: () => this.onSelectRecord(r.id),
+    }));
+
+    const selectedRecordRaw = this.records.find(r => r.id === s.selectedRecordId);
+    const selectedRecord = selectedRecordRaw ? {
+      ...selectedRecordRaw,
+      wifiColor: selectedRecordRaw.wifi === '已連接' ? '#17a361' : '#e0483f',
+      badgeBg: badgeColors[selectedRecordRaw.status].bg,
+      badgeColor: badgeColors[selectedRecordRaw.status].color,
+    } : null;
+
+    const pending = s.pending.map(p => ({
+      ...p,
+      onApprove: () => this.approvePending(p.id),
+      onBlock: () => this.blockPending(p.id),
+      onNoteChange: (e) => this.onNotePendingChange(p.id, e.target.value),
+    }));
+
+    const liveAttendance = this.liveAttendanceSeed.map(r => ({
+      ...r,
+      initial: r.name[0],
+      inout: r.in + (r.out !== '--' ? ' - ' + r.out : ''),
+      badgeBg: badgeColors[r.status].bg,
+      badgeColor: badgeColors[r.status].color,
+      badgeLabel: r.status,
+    }));
+
+    const dayCountLabel = (days) => {
+      const total = days.reduce((a, b) => a + b, 0);
+      return total % 1 === 0 ? total + ' 日' : total + ' 日';
+    };
+    const daysLabel = (days) => this.dayLabels.map((l, i) => days[i] === 1 ? l : days[i] === 0.5 ? l + '半' : null).filter(Boolean).join('、');
+
+    const employees = s.employees.map(e => ({
+      ...e,
+      roleLabel: e.role === 'admin' ? '管理員' : '員工',
+      roleBg: e.role === 'admin' ? '#eaf5fc' : '#eef4f9',
+      roleColor: e.role === 'admin' ? '#0b72b8' : '#6b7f8f',
+      activeLabel: e.active ? '在職' : '停用',
+      activeColor: e.active ? '#17a361' : '#9db2c1',
+      toggleActiveLabel: e.active ? '停用' : '啟用',
+      scheduleTimeLabel: `${e.workStart} - ${e.workEnd}`,
+      scheduleDaysLabel: `${daysLabel(e.workDays)} · 每週${dayCountLabel(e.workDays)}`,
+      onToggleRole: () => this.toggleEmpRole(e.id),
+      onToggleActive: () => this.toggleEmpActive(e.id),
+      onResetPw: () => this.resetEmpPw(e.name),
+      onEditSchedule: () => this.onEditSchedule(e.id),
+    }));
+
+    const scheduleEmpRaw = s.employees.find(e => e.id === s.scheduleEmpId);
+    const scheduleEmp = scheduleEmpRaw || null;
+    const scheduleDraftDays = s.scheduleDraft.workDays.map((v, i) => ({
+      label: this.dayLabels[i],
+      subLabel: v === 1 ? '全日' : v === 0.5 ? '半日' : '休息',
+      bg: v === 1 ? '#e6f7ef' : v === 0.5 ? '#fdf2df' : '#f2f5f8',
+      color: v === 1 ? '#17a361' : v === 0.5 ? '#d98c0a' : '#9db2c1',
+      border: v === 1 ? '#cdeedd' : v === 0.5 ? '#f5e3bd' : '#e2edf5',
+      onCycle: () => this.onCycleScheduleDay(i),
+    }));
+    const scheduleDraftTotalDays = s.scheduleDraft.workDays.reduce((a, b) => a + b, 0);
+
+    const meRaw = s.employees.find(e => e.id === 1);
+    const myWorkStart = meRaw ? meRaw.workStart : '09:00';
+    const myWorkEnd = meRaw ? meRaw.workEnd : '18:00';
+    const myWorkDaysDisplay = (meRaw ? meRaw.workDays : [0, 1, 1, 1, 1, 1, 0]).map((v, i) => ({
+      label: this.dayLabels[i],
+      bg: v === 1 ? '#e6f7ef' : v === 0.5 ? '#fdf2df' : '#f2f5f8',
+      color: v === 1 ? '#17a361' : v === 0.5 ? '#d98c0a' : '#c7d0d6',
+    }));
+
+    return {
+      isLogin: s.screen === 'login',
+      isEmployee: s.screen === 'employee',
+      isManager: s.screen === 'manager',
+      loginEmail: s.loginEmail,
+      loginPassword: s.loginPassword,
+      loginError: s.loginError,
+      onEmailChange: this.onEmailChange,
+      onPasswordChange: this.onPasswordChange,
+      onLogin: this.onLogin,
+      onLogout: this.onLogout,
+      toast: s.toast,
+
+      currentUserName: '陳大文',
+      todayLabel: '2026年7月11日 星期六',
+
+      empTabHome: empTab === 'home',
+      empTabAttendance: empTab === 'attendance',
+      empTabProfile: empTab === 'profile',
+      onTabHome: this.onTabHome,
+      onTabAttendance: this.onTabAttendance,
+      onTabProfile: this.onTabProfile,
+      tabHomeColor: tabColor('home'),
+      tabAttendanceColor: tabColor('attendance'),
+      tabProfileColor: tabColor('profile'),
+
+      wifiColor, gpsColor,
+      wifiLabel: wifiLabelMap[s.wifiState],
+      gpsLabel: gpsLabelMap[s.gpsState],
+      wifiCardBg: wifiColor === '#17a361' ? '#e6f7ef' : wifiColor === '#e0483f' ? '#fceceb' : '#f7fbfd',
+      wifiCardBorder: wifiColor === '#17a361' ? '#cdeedd' : wifiColor === '#e0483f' ? '#f6c9c6' : '#e2edf5',
+      gpsCardBg: gpsColor === '#17a361' ? '#e6f7ef' : gpsColor === '#e0483f' ? '#fceceb' : '#f7fbfd',
+      gpsCardBorder: gpsColor === '#17a361' ? '#cdeedd' : gpsColor === '#e0483f' ? '#f6c9c6' : '#e2edf5',
+      punchDisabled, punchButtonLabel, punchButtonStyle,
+      onPunch: this.onPunch,
+      punchInDisplay: s.punchInTime || '--:--',
+      punchOutDisplay: s.punchOutTime || '--:--',
+      last7Days: this.last7,
+
+      calendarDays, monthOkCount, monthPendingCount, monthAbsentCount,
+
+      pwCurrent: s.pwCurrent, pwNew: s.pwNew, pwConfirm: s.pwConfirm, pwError: s.pwError,
+      onPwCurrentChange: this.onPwCurrentChange, onPwNewChange: this.onPwNewChange, onPwConfirmChange: this.onPwConfirmChange,
+      onChangePassword: this.onChangePassword,
+
+      mgrTabOverview: mgrTab === 'overview',
+      mgrTabRecords: mgrTab === 'records',
+      mgrTabApprovals: mgrTab === 'approvals',
+      mgrTabEmployees: mgrTab === 'employees',
+      mgrTabSettings: mgrTab === 'settings',
+      mgrTabTitle: mgrTitles[mgrTab],
+      onMgrOverview: this.onMgrOverview, onMgrRecords: this.onMgrRecords, onMgrApprovals: this.onMgrApprovals, onMgrEmployees: this.onMgrEmployees, onMgrSettings: this.onMgrSettings,
+      mgrOverviewBg: mgrBg('overview'), mgrOverviewColor: mgrColor('overview'),
+      mgrRecordsBg: mgrBg('records'), mgrRecordsColor: mgrColor('records'),
+      mgrApprovalsBg: mgrBg('approvals'), mgrApprovalsColor: mgrColor('approvals'),
+      mgrEmployeesBg: mgrBg('employees'), mgrEmployeesColor: mgrColor('employees'),
+      mgrSettingsBg: mgrBg('settings'), mgrSettingsColor: mgrColor('settings'),
+
+      pendingCount: s.pending.length,
+      noPending: s.pending.length === 0,
+      pending,
+      top5Pending: pending.slice(0, 5),
+      onBulkApprove: this.onBulkApprove,
+
+      statPunched: 47,
+      statVerified: 42,
+      statBlocked: 3,
+      liveAttendance,
+      notPunchedChips: this.notPunched,
+
+      recordEmployeeFilter: s.recordEmployeeFilter,
+      recordStatusFilter: s.recordStatusFilter,
+      recordEmployeeOptions: [...new Set(this.records.map(r => r.name))],
+      onRecordEmployeeFilterChange: this.onRecordEmployeeFilterChange,
+      onRecordStatusFilterChange: this.onRecordStatusFilterChange,
+      filteredRecords,
+      filteredRecordsEmpty: filteredRecords.length === 0,
+      onExportCsv: this.onExportCsv,
+      selectedRecord,
+      onCloseDrawer: this.onCloseDrawer,
+      stopPropagation: this.stopPropagation,
+
+      showAddEmployee: s.showAddEmployee,
+      onToggleAddEmployee: this.onToggleAddEmployee,
+      newEmpName: s.newEmpName, newEmpDept: s.newEmpDept, newEmpPos: s.newEmpPos, newEmpEmail: s.newEmpEmail,
+      onNewEmpNameChange: this.onNewEmpNameChange, onNewEmpDeptChange: this.onNewEmpDeptChange, onNewEmpPosChange: this.onNewEmpPosChange, onNewEmpEmailChange: this.onNewEmpEmailChange,
+      onAddEmployee: this.onAddEmployee,
+      employees,
+      scheduleEmp, scheduleDraft: s.scheduleDraft, scheduleDraftDays, scheduleDraftTotalDays,
+      onEditSchedule: this.onEditSchedule, onCloseSchedule: this.onCloseSchedule,
+      onScheduleStartChange: this.onScheduleStartChange, onScheduleEndChange: this.onScheduleEndChange,
+      onSaveSchedule: this.onSaveSchedule,
+      myWorkStart, myWorkEnd, myWorkDaysDisplay,
+
+      ssid: s.ssid, gateway: s.gateway,
+      onSsidChange: this.onSsidChange, onGatewayChange: this.onGatewayChange, onRetestWifi: this.onRetestWifi,
+      officeLat: s.officeLat, officeLng: s.officeLng, officeAddress: s.officeAddress, geofenceRadius: s.geofenceRadius,
+      onOfficeLatChange: this.onOfficeLatChange, onOfficeLngChange: this.onOfficeLngChange, onOfficeAddressChange: this.onOfficeAddressChange, onGeofenceRadiusChange: this.onGeofenceRadiusChange,
+      workStart: s.workStart, workEnd: s.workEnd, lateTolerance: s.lateTolerance,
+      onWorkStartChange: this.onWorkStartChange, onWorkEndChange: this.onWorkEndChange, onLateToleranceChange: this.onLateToleranceChange,
+      singleSignalBg: s.singleSignal ? '#0b72b8' : '#dbeaf3',
+      singleSignalKnobLeft: s.singleSignal ? '18px' : '2px',
+      onToggleSingleSignal: this.onToggleSingleSignal,
+      onResetSettings: this.onResetSettings, onSaveSettings: this.onSaveSettings,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1036 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>C4T 出勤 · 清晰一點嘅出勤管理</title>
+  <meta name="description" content="C4T 出勤系統 — 專為香港中小企而設嘅智能出勤管理方案。GPS 打卡、Wi-Fi 驗證、管理審批，一應俱全。">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏱</text></svg>">
+  <style>
+    /* ════════════════════════════════════════════════════
+       C4T 出勤 — Landing Page Styles
+       ════════════════════════════════════════════════════ */
+
+    /* ── Reset ────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   "PingFang HK", "Microsoft JhengHei", sans-serif;
+      color: #102a43;
+      background: #fff;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Design tokens ────────────────────────────────── */
+    :root {
+      --ink: #102a43;
+      --muted: #627d98;
+      --line: #e2edf4;
+      --canvas: #f5fbff;
+      --sky-50: #eaf7ff;
+      --sky-100: #d2f0ff;
+      --sky-400: #5ab8f5;
+      --sky-500: #2d9cdb;
+      --sky-600: #1677c8;
+      --sky-700: #0c5eab;
+      --sky-800: #07417a;
+      --sky-900: #032a52;
+      --success: #168c68;
+      --warning: #b7791f;
+      --danger: #c2413c;
+      --radius: 16px;
+      --shadow-sm: 0 4px 14px rgba(25,91,132,.06);
+      --shadow-md: 0 8px 28px rgba(25,91,132,.08);
+      --shadow-lg: 0 16px 48px rgba(25,91,132,.12);
+    }
+
+    /* ── Typography ───────────────────────────────────── */
+    h1, h2, h3, h4 { font-weight: 800; letter-spacing: -.03em; line-height: 1.15; }
+    h1 { font-size: clamp(2.2rem, 5.5vw, 3.6rem); }
+    h2 { font-size: clamp(1.6rem, 3.5vw, 2.4rem); }
+    h3 { font-size: clamp(1.1rem, 2vw, 1.4rem); }
+    p  { line-height: 1.7; color: var(--muted); }
+    a  { text-decoration: none; color: inherit; }
+    img { max-width: 100%; height: auto; display: block; }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--sky-600);
+      margin-bottom: .75rem;
+    }
+
+    /* ── Utility ──────────────────────────────────────── */
+    .container {
+      width: min(100% - 3rem, 1200px);
+      margin-inline: auto;
+    }
+    .section { padding: clamp(4rem, 10vw, 7rem) 0; }
+    .text-center { text-align: center; }
+    .text-muted { color: var(--muted); }
+
+    /* ── Buttons ──────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .8rem 2rem; border-radius: 60px;
+      font-weight: 700; font-size: .95rem;
+      cursor: pointer; border: none;
+      transition: transform .2s, box-shadow .2s, background .2s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary {
+      background: var(--sky-600);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(22,119,200,.35);
+    }
+    .btn-primary:hover {
+      background: var(--sky-700);
+      box-shadow: 0 6px 24px rgba(22,119,200,.45);
+      transform: translateY(-2px);
+    }
+    .btn-outline {
+      background: transparent;
+      color: var(--ink);
+      border: 2px solid var(--line);
+    }
+    .btn-outline:hover {
+      border-color: var(--sky-600);
+      color: var(--sky-600);
+      background: var(--sky-50);
+      transform: translateY(-2px);
+    }
+    .btn-white {
+      background: #fff;
+      color: var(--sky-700);
+      box-shadow: 0 4px 16px rgba(0,0,0,.08);
+    }
+    .btn-white:hover {
+      box-shadow: 0 8px 28px rgba(0,0,0,.14);
+      transform: translateY(-2px);
+    }
+
+    /* ── Navigation ───────────────────────────────────── */
+    .navbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: .9rem 0;
+      transition: background .3s, box-shadow .3s;
+    }
+    .navbar.scrolled {
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 1px 0 var(--line);
+    }
+    .navbar .container {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .navbar .brand {
+      display: flex; align-items: center; gap: .6rem; font-weight: 800; font-size: 1.1rem;
+    }
+    .navbar .brand svg { flex-shrink: 0; }
+    .nav-links {
+      display: flex; align-items: center; gap: .3rem;
+      list-style: none;
+    }
+    .nav-links a {
+      padding: .5rem 1rem; border-radius: 8px;
+      font-size: .9rem; font-weight: 600;
+      transition: background .15s;
+    }
+    .nav-links a:hover { background: var(--sky-50); color: var(--sky-600); }
+    .nav-links .btn { padding: .5rem 1.3rem; margin-left: .5rem; }
+    .mobile-menu-btn {
+      display: none; background: none; border: none;
+      font-size: 1.5rem; cursor: pointer; padding: .3rem;
+      color: var(--ink);
+    }
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+        position: fixed; top: 60px; left: 0; right: 0;
+        flex-direction: column; padding: 1rem; gap: .5rem;
+        background: rgba(255,255,255,.98);
+        backdrop-filter: blur(14px);
+        box-shadow: 0 8px 28px rgba(0,0,0,.1);
+      }
+      .nav-links.open { display: flex; }
+      .mobile-menu-btn { display: block; }
+      .nav-links .btn { margin-left: 0; }
+    }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      min-height: 100dvh;
+      display: flex; align-items: center;
+      overflow: hidden;
+      background: linear-gradient(160deg, #f0f8ff 0%, #d4edff 30%, #b4dbff 60%, #d4edff 100%);
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 10% 20%, rgba(22,119,200,.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 90% 80%, rgba(12,94,171,.08) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    /* Animated floating shapes */
+    .hero-shapes {
+      position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+    }
+    .hero-shapes span {
+      position: absolute; border-radius: 50%;
+      background: rgba(22,119,200,.06);
+      animation: float 18s ease-in-out infinite;
+    }
+    .hero-shapes span:nth-child(1) {
+      width: 400px; height: 400px; top: -10%; left: -5%;
+      animation-delay: 0s; animation-duration: 22s;
+    }
+    .hero-shapes span:nth-child(2) {
+      width: 250px; height: 250px; bottom: 5%; right: 8%;
+      animation-delay: -5s; animation-duration: 18s;
+      background: rgba(12,94,171,.04);
+    }
+    .hero-shapes span:nth-child(3) {
+      width: 180px; height: 180px; top: 30%; right: 25%;
+      animation-delay: -10s; animation-duration: 20s;
+      background: rgba(90,184,245,.06);
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -40px) scale(1.05); }
+      66% { transform: translate(-20px, 20px) scale(.95); }
+    }
+
+    .hero .container {
+      position: relative; z-index: 2;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 4rem; align-items: center;
+      padding-top: 5rem; padding-bottom: 2rem;
+    }
+    .hero-content h1 { margin-bottom: 1.2rem; }
+    .hero-content h1 .highlight {
+      background: linear-gradient(135deg, var(--sky-600), var(--sky-400));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-content p {
+      font-size: 1.15rem; margin-bottom: 2.2rem;
+      max-width: 520px;
+    }
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .hero-actions .btn { font-size: 1rem; padding: 1rem 2.2rem; }
+    .hero-stats {
+      display: flex; gap: 2.5rem; margin-top: 3rem; padding-top: 2rem;
+      border-top: 1px solid rgba(22,119,200,.15);
+    }
+    .hero-stats div { text-align: left; }
+    .hero-stats strong {
+      display: block; font-size: 1.8rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--sky-700), var(--sky-500));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-stats span { font-size: .85rem; color: var(--muted); font-weight: 500; }
+
+    /* Hero right — phone mockup */
+    .hero-visual {
+      display: flex; justify-content: center; align-items: center;
+      position: relative;
+    }
+    .hero-visual .phone-frame {
+      width: min(100%, 340px);
+      aspect-ratio: 9 / 19;
+      border-radius: 36px;
+      background: linear-gradient(160deg, #fff 0%, var(--sky-50) 100%);
+      border: 3px solid rgba(255,255,255,.6);
+      box-shadow: 0 24px 64px rgba(22,119,200,.18), 0 0 0 1px rgba(22,119,200,.08);
+      padding: 16px 12px;
+      display: flex; flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    .phone-frame .notch {
+      width: 100px; height: 18px; border-radius: 999px;
+      background: #102a43; margin: 0 auto 14px;
+    }
+    .phone-screen {
+      flex: 1;
+      border-radius: 12px;
+      background: var(--canvas);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .phone-screen .phone-top {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 12px 8px; background: #fff;
+      border-bottom: 1px solid var(--line);
+    }
+    .phone-screen .phone-top .p-brand {
+      font-size: .75rem; font-weight: 800; display: flex; align-items: center; gap: 5px;
+    }
+    .phone-screen .phone-top .p-avatar {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--sky-100); color: var(--sky-700);
+      display: grid; place-items: center; font-size: .6rem; font-weight: 800;
+    }
+    .phone-screen .phone-content { padding: 10px 12px; flex: 1; }
+    .phone-screen .punch-card-mock {
+      background: #fff; border-radius: 12px; padding: 12px;
+      border: 1px solid var(--line);
+      box-shadow: 0 4px 12px rgba(25,91,132,.04);
+    }
+    .phone-screen .punch-card-mock .p-time {
+      font-size: 1.8rem; font-weight: 800; letter-spacing: -.04em;
+      margin: 4px 0;
+    }
+    .phone-screen .punch-card-mock .p-status {
+      display: inline-block; padding: 3px 8px; border-radius: 999px;
+      background: var(--sky-100); font-size: .65rem; font-weight: 700;
+      color: var(--sky-700);
+    }
+    .phone-screen .punch-card-mock .p-btn {
+      width: 100%; margin-top: 10px; padding: 10px; border: 0; border-radius: 10px;
+      background: var(--sky-600); color: #fff; font-weight: 700; font-size: .85rem;
+    }
+    .phone-screen .quick-mock {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-top: 10px;
+    }
+    .phone-screen .quick-mock div {
+      padding: 8px 6px; border-radius: 10px; border: 1px solid var(--line);
+      background: #fff; font-size: .6rem; color: var(--muted); text-align: center;
+    }
+    .phone-screen .quick-mock div b { display: block; color: var(--ink); font-size: .7rem; margin-bottom: 2px; }
+    /* Floating badge */
+    .floating-badge {
+      position: absolute; top: 8%; right: -5%;
+      background: #fff; border-radius: 14px; padding: .8rem 1.2rem;
+      box-shadow: 0 8px 28px rgba(22,119,200,.14);
+      font-size: .75rem; font-weight: 700;
+      display: flex; align-items: center; gap: .5rem;
+      animation: float 6s ease-in-out infinite;
+      z-index: 3;
+    }
+    .floating-badge .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--success);
+    }
+    .floating-badge-2 {
+      position: absolute; bottom: 12%; left: -8%;
+      background: #fff; border-radius: 14px; padding: .8rem 1.2rem;
+      box-shadow: 0 8px 28px rgba(22,119,200,.14);
+      font-size: .75rem; font-weight: 700;
+      display: flex; align-items: center; gap: .5rem;
+      animation: float 8s ease-in-out infinite reverse;
+      z-index: 3;
+    }
+    .floating-badge-2 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warning); }
+
+    @media (max-width: 900px) {
+      .hero .container { grid-template-columns: 1fr; text-align: center; }
+      .hero-content p { margin-inline: auto; }
+      .hero-stats { justify-content: center; }
+      .hero-actions { justify-content: center; }
+      .hero-visual { display: none; }
+      .hero-stats { gap: 1.5rem; }
+    }
+
+    /* ── Section: features ────────────────────────────── */
+    .features-section { background: var(--canvas); }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+    .feature-card {
+      background: #fff; border-radius: 20px; padding: 2rem;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+      transition: transform .3s, box-shadow .3s;
+      position: relative; overflow: hidden;
+    }
+    .feature-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--sky-400), var(--sky-600));
+      opacity: 0; transition: opacity .3s;
+    }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+    .feature-icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      display: grid; place-items: center;
+      margin-bottom: 1.2rem;
+      font-size: 1.3rem;
+    }
+    .feature-card h3 { margin-bottom: .6rem; }
+    .feature-card p { font-size: .9rem; }
+
+    /* ── Section: How It Works ────────────────────────── */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+      counter-reset: step;
+    }
+    .step-card {
+      text-align: center; padding: 2rem 1.5rem;
+      position: relative;
+    }
+    .step-card::before {
+      counter-increment: step;
+      content: counter(step);
+      display: grid; place-items: center;
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--sky-600); color: #fff;
+      font-weight: 800; font-size: 1.2rem;
+      margin: 0 auto 1.2rem;
+    }
+    .step-card h3 { margin-bottom: .6rem; }
+    .step-card p { font-size: .9rem; }
+    .step-card:not(:last-child)::after {
+      content: '→';
+      position: absolute; right: -1.2rem; top: 2.2rem;
+      font-size: 1.8rem; color: var(--sky-300, var(--sky-400));
+      font-weight: 300;
+    }
+    @media (max-width: 800px) {
+      .step-card::after { display: none; }
+    }
+
+    /* ── Section: Showcase ────────────────────────────── */
+    .showcase-section {
+      background: linear-gradient(180deg, var(--canvas) 0%, #fff 100%);
+    }
+    .mockup-showcase {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      margin-top: 3rem;
+      align-items: center;
+    }
+    .mockup-card {
+      border-radius: 24px; overflow: hidden;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-md);
+      background: #fff;
+      transition: transform .3s, box-shadow .3s;
+    }
+    .mockup-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    .mockup-card .mockup-header {
+      background: linear-gradient(135deg, var(--sky-600), var(--sky-700));
+      color: #fff; padding: 1.5rem 2rem;
+    }
+    .mockup-card .mockup-header h4 { margin-bottom: .3rem; }
+    .mockup-card .mockup-header p { color: rgba(255,255,255,.75); font-size: .85rem; }
+    .mockup-card .mockup-body { padding: 2rem; }
+    .mockup-card .mockup-body .mini-stats {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: .8rem; margin-bottom: 1.5rem;
+    }
+    .mockup-card .mockup-body .mini-stat {
+      padding: 1rem; border-radius: 12px; background: var(--sky-50);
+    }
+    .mockup-card .mockup-body .mini-stat strong { display: block; font-size: 1.1rem; }
+    .mockup-card .mockup-body .mini-stat span { font-size: .7rem; color: var(--muted); }
+    .mockup-card .mockup-body .mini-row {
+      display: grid; grid-template-columns: 1fr 80px auto; gap: .8rem;
+      padding: .8rem 0; border-bottom: 1px solid var(--line); font-size: .85rem;
+    }
+    .mockup-card .mockup-body .mini-row:last-child { border-bottom: 0; }
+    .mockup-card .mockup-body .mini-row .name { font-weight: 600; }
+    .mockup-card .mockup-body .mini-row .time { color: var(--muted); }
+
+    @media (max-width: 768px) {
+      .mockup-showcase { grid-template-columns: 1fr; }
+    }
+
+    /* ── Section: Benefits ────────────────────────────── */
+    .benefits-list {
+      display: grid; gap: 1.2rem; margin-top: 2.5rem;
+      max-width: 800px; margin-inline: auto;
+    }
+    .benefit-item {
+      display: flex; align-items: flex-start; gap: 1.2rem;
+      padding: 1.5rem 2rem;
+      background: #fff; border-radius: 16px;
+      border: 1px solid var(--line);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .benefit-item:hover { transform: translateX(4px); box-shadow: var(--shadow-sm); }
+    .benefit-item .check {
+      flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+      background: #e6f8f1; color: var(--success);
+      display: grid; place-items: center; font-weight: 800; font-size: .85rem;
+    }
+    .benefit-item h4 { margin-bottom: .3rem; }
+    .benefit-item p { font-size: .9rem; }
+
+    /* ── Section: Testimonials ────────────────────────── */
+    .testimonials-section { background: var(--canvas); }
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+    .testimonial-card {
+      background: #fff; border-radius: 20px; padding: 2rem;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+    }
+    .testimonial-card .stars { color: #f5b342; font-size: .9rem; margin-bottom: .8rem; letter-spacing: 2px; }
+    .testimonial-card blockquote {
+      font-size: .9rem; line-height: 1.7; color: var(--muted); margin-bottom: 1.2rem;
+    }
+    .testimonial-card .author {
+      display: flex; align-items: center; gap: .8rem;
+    }
+    .testimonial-card .author .avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--sky-100); color: var(--sky-700);
+      display: grid; place-items: center; font-weight: 800; font-size: .8rem;
+    }
+    .testimonial-card .author .info b { display: block; font-size: .85rem; }
+    .testimonial-card .author .info span { font-size: .75rem; color: var(--muted); }
+
+    /* ── Section: CTA ────────────────────────────────── */
+    .cta-section {
+      background: linear-gradient(160deg, var(--sky-800), var(--sky-700));
+      color: #fff; text-align: center;
+    }
+    .cta-section h2 { margin-bottom: 1rem; }
+    .cta-section p { color: rgba(255,255,255,.7); max-width: 560px; margin: 0 auto 2rem; }
+    .cta-section .btn-white { font-size: 1.05rem; padding: 1rem 2.5rem; }
+    .cta-section .btn-outline {
+      color: #fff; border-color: rgba(255,255,255,.3);
+    }
+    .cta-section .btn-outline:hover {
+      background: rgba(255,255,255,.1); border-color: #fff;
+    }
+    .cta-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+    /* ── Footer ───────────────────────────────────────── */
+    .footer {
+      background: var(--ink); color: #fff; padding: 4rem 0 2rem;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 3rem;
+      margin-bottom: 3rem;
+    }
+    .footer-col .brand {
+      display: flex; align-items: center; gap: .6rem; font-weight: 800; margin-bottom: 1rem;
+    }
+    .footer-col p { color: rgba(255,255,255,.5); font-size: .85rem; line-height: 1.7; }
+    .footer-col h4 { margin-bottom: 1rem; font-size: .9rem; }
+    .footer-col ul { list-style: none; }
+    .footer-col ul li { margin-bottom: .6rem; }
+    .footer-col ul a { color: rgba(255,255,255,.5); font-size: .85rem; transition: color .15s; }
+    .footer-col ul a:hover { color: #fff; }
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,.08);
+      padding-top: 1.5rem; margin-top: 2rem;
+      display: flex; justify-content: space-between;
+      font-size: .8rem; color: rgba(255,255,255,.35);
+    }
+    @media (max-width: 768px) {
+      .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
+    }
+    @media (max-width: 480px) {
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-bottom { flex-direction: column; gap: .5rem; text-align: center; }
+    }
+
+    /* ── Scroll reveal animation ──────────────────────── */
+    .reveal {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .reveal.visible {
+      opacity: 1; transform: translateY(0);
+    }
+
+    /* ── Section header ──────────────────────────────── */
+    .section-header { margin-bottom: 1rem; }
+
+    /* ── Responsive tweaks ────────────────────────────── */
+    @media (max-width: 480px) {
+      .hero-stats { flex-direction: column; gap: 1rem; align-items: center; }
+      .hero-stats div { text-align: center; }
+    }
+
+    /* ── Gradient text section ────────────────────────── */
+    .gradient-text {
+      background: linear-gradient(135deg, var(--sky-600), var(--sky-400));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================
+       NAVIGATION
+       ========================================================== -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="#" class="brand">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <rect width="28" height="28" rx="8" fill="#1677C8"/>
+          <path d="M14 6v8l5 3" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="14" cy="14" r="9" stroke="#fff" stroke-width="2" fill="none"/>
+        </svg>
+        C4T 出勤
+      </a>
+      <button class="mobile-menu-btn" id="menuBtn" aria-label="選單">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#features">功能</a></li>
+        <li><a href="#how-it-works">運作方式</a></li>
+        <li><a href="#showcase">產品預覽</a></li>
+        <li><a href="#testimonials">客戶心聲</a></li>
+        <li><a href="#cta" class="btn btn-primary">免費試用</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ==========================================================
+       HERO
+       ========================================================== -->
+  <section class="hero" id="hero">
+    <div class="hero-shapes">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="container">
+      <div class="hero-content reveal">
+        <div class="eyebrow">C4T 出勤系統</div>
+        <h1>出勤，<br><span class="highlight">清晰一點。</span></h1>
+        <p>
+          專為香港中小企而設嘅智能出勤管理方案。GPS 打卡、Wi-Fi 驗證、
+          即時審批、員工管理——一個平台搞掂晒。
+        </p>
+        <div class="hero-actions">
+          <a href="#cta" class="btn btn-primary">免費試用 →</a>
+          <a href="#showcase" class="btn btn-outline">睇產品</a>
+        </div>
+        <div class="hero-stats">
+          <div><strong>99.9%</strong><span>系統正常運作時間</span></div>
+          <div><strong>&lt; 3秒</strong><span>打卡完成時間</span></div>
+          <div><strong>零</strong><span>硬件安裝需要</span></div>
+        </div>
+      </div>
+
+      <div class="hero-visual reveal">
+        <div class="phone-frame">
+          <div class="notch"></div>
+          <div class="phone-screen">
+            <div class="phone-top">
+              <div class="p-brand">
+                <svg width="16" height="16" viewBox="0 0 28 28" fill="none">
+                  <rect width="28" height="28" rx="8" fill="#1677C8"/>
+                  <path d="M14 6v8l5 3" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                C4T
+              </div>
+              <div class="p-avatar">WH</div>
+            </div>
+            <div class="phone-content">
+              <div style="font-size:.6rem;font-weight:700;color:var(--sky-600);letter-spacing:.08em;margin-bottom:6px;">星期四 · 2026年7月16日</div>
+              <div class="punch-card-mock">
+                <div style="font-size:.65rem;color:var(--muted);">今日出勤</div>
+                <div class="p-time">09:02</div>
+                <div class="p-status">已於 09:02 上班</div>
+                <button class="p-btn">下班打卡</button>
+              </div>
+              <div class="quick-mock">
+                <div><b>打</b>下班打卡</div>
+                <div><b>記</b>出勤紀錄</div>
+                <div><b>我</b>個人資料</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="floating-badge">
+          <span class="dot"></span> GPS 打卡成功
+        </div>
+        <div class="floating-badge-2">
+          <span class="dot"></span> Wi-Fi 驗證中
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       FEATURES
+       ========================================================== -->
+  <section class="section features-section" id="features">
+    <div class="container text-center">
+      <div class="reveal">
+        <span class="eyebrow">功能特點</span>
+        <h2>為咗出勤管理而設嘅每個細節</h2>
+        <p style="max-width:600px;margin:.8rem auto 0;">由員工打卡到管理審批，C4T 出勤系統涵蓋你需要嘅一切。</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card reveal">
+          <div class="feature-icon" style="background:#eaf7ff;color:#1677c8;">📍</div>
+          <h3>GPS 智能打卡</h3>
+          <p>員工用手機即可打卡，系統自動驗證位置係咪喺辦公室地理圍欄範圍內，從源頭減少虛假打卡。</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon" style="background:#e6f8f1;color:#168c68;">📶</div>
+          <h3>Wi-Fi 可信驗證</h3>
+          <p>連接公司受信任嘅 Wi-Fi gateway 時，系統會自動進行網絡驗證，做到真正嘅免接觸打卡體驗。</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon" style="background:#fff4dd;color:#b7791f;">📊</div>
+          <h3>即時管理後台</h3>
+          <p>管理員 Dashboard 一目了然：即時出勤狀態、待審批項目、異常警示，仲支援 CSV 匯出。</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon" style="background:#f0f0ff;color:#6c5ce7;">👥</div>
+          <h3>員工管理</h3>
+          <p>新增、啟用、停用、角色設定、個人工時編排，全部喺後台搞掂，唔需要人手處理 Excel。</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon" style="background:#fff0ef;color:#c2413c;">🔍</div>
+          <h3>審批流程</h3>
+          <p>異常打卡自動進入審批隊列，管理員可以批准或退回，每一次操作都有完整審計紀錄。</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon" style="background:#eaf7ff;color:#1677c8;">⚙️</div>
+          <h3>彈性政策設定</h3>
+          <p>辦公室位置、地理圍欄半徑、返工時間、遲到寬限、Wi-Fi 設定——全部由管理員自行配置。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       HOW IT WORKS
+       ========================================================== -->
+  <section class="section" id="how-it-works">
+    <div class="container text-center">
+      <div class="reveal">
+        <span class="eyebrow">運作方式</span>
+        <h2>三步搞掂出勤管理</h2>
+        <p style="max-width:560px;margin:.8rem auto 0;">簡單直接，唔需要複雜設定，幾分鐘就可以開始使用。</p>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card reveal">
+          <h3>設定辦公室政策</h3>
+          <p>管理員喺後台輸入辦公室地址、GPS 座標、返工時間同 Wi-Fi 網絡，一次設定永久使用。</p>
+        </div>
+        <div class="step-card reveal">
+          <h3>員工手機打卡</h3>
+          <p>員工返到公司，一撳「上班打卡」，系統自動收集 GPS 位置同網絡資訊，唔使排隊等。</p>
+        </div>
+        <div class="step-card reveal">
+          <h3>管理員審批監察</h3>
+          <p>Dashboard 即時顯示出勤狀態、異常提醒。管理員可以審批、回溯、匯出，輕鬆掌握全局。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       SHOWCASE
+       ========================================================== -->
+  <section class="section showcase-section" id="showcase">
+    <div class="container">
+      <div class="text-center reveal">
+        <span class="eyebrow">產品預覽</span>
+        <h2>員工 Portal × 管理員後台</h2>
+        <p style="max-width:560px;margin:.8rem auto 0;">一個平台，兩種視角。員工專注打卡，管理員掌控全局。</p>
+      </div>
+      <div class="mockup-showcase">
+        <div class="mockup-card reveal">
+          <div class="mockup-header">
+            <h4>📱 員工 Portal</h4>
+            <p>手機為先嘅打卡體驗，一鍵完成</p>
+          </div>
+          <div class="mockup-body" style="min-height:300px;display:flex;flex-direction:column;gap:.4rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:.8rem;">
+              <span style="font-weight:700;">星期四 · 7月16日</span>
+              <span style="color:var(--muted);font-size:.7rem;">09:00 — 18:00</span>
+            </div>
+            <div style="border:1px solid var(--line);border-radius:14px;padding:1rem;background:linear-gradient(150deg,#fff,#effaff);">
+              <div style="font-size:.7rem;color:var(--muted);">今日出勤</div>
+              <div style="font-size:2rem;font-weight:800;letter-spacing:-.04em;">09:02</div>
+              <span style="display:inline-block;padding:3px 8px;border-radius:999px;background:var(--sky-100);font-size:.65rem;font-weight:700;color:var(--sky-700);">已於 09:02 上班</span>
+              <div style="width:100%;margin-top:.6rem;padding:.7rem;border:0;border-radius:10px;background:var(--sky-600);color:#fff;font-weight:700;text-align:center;font-size:.85rem;">下班打卡</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-top:.3rem;">
+              <div style="padding:.6rem;border-radius:10px;border:1px solid var(--line);font-size:.6rem;color:var(--muted);text-align:center;"><b style="display:block;color:var(--ink);font-size:.65rem;">打</b>下班打卡</div>
+              <div style="padding:.6rem;border-radius:10px;border:1px solid var(--line);font-size:.6rem;color:var(--muted);text-align:center;"><b style="display:block;color:var(--ink);font-size:.65rem;">記</b>出勤紀錄</div>
+              <div style="padding:.6rem;border-radius:10px;border:1px solid var(--line);font-size:.6rem;color:var(--muted);text-align:center;"><b style="display:block;color:var(--ink);font-size:.65rem;">我</b>個人資料</div>
+            </div>
+            <div style="margin-top:.3rem;padding:.6rem;border-radius:10px;border:1px solid var(--line);display:flex;gap:.4rem;align-items:flex-start;">
+              <span style="background:var(--sky-50);color:var(--sky-600);padding:3px 6px;border-radius:6px;font-size:.55rem;font-weight:800;">位</span>
+              <div style="font-size:.6rem;"><b style="font-size:.65rem;display:block;">火炭工業中心 9 樓</b><span style="color:var(--muted);">位置在設定範圍內</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="mockup-card reveal">
+          <div class="mockup-header">
+            <h4>🖥️ 管理員後台</h4>
+            <p>全面嘅 Dashboard 同管理工具</p>
+          </div>
+          <div class="mockup-body">
+            <div class="mini-stats">
+              <div class="mini-stat"><strong>3</strong><span>已打卡</span></div>
+              <div class="mini-stat"><strong style="color:var(--success);">2</strong><span>已驗證</span></div>
+              <div class="mini-stat"><strong style="color:var(--warning);">1</strong><span>待審批</span></div>
+              <div class="mini-stat"><strong style="color:var(--danger);">1</strong><span>遲到</span></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:.6rem;">
+              <span style="font-size:.7rem;font-weight:700;">今日即時出勤</span>
+              <span style="font-size:.6rem;color:var(--sky-600);font-weight:700;">查看全部 →</span>
+            </div>
+            <div class="mini-row">
+              <span class="name">黃嘉怡</span>
+              <span class="time">09:02</span>
+              <span style="font-size:.65rem;padding:2px 6px;border-radius:999px;background:#e6f8f1;color:var(--success);font-weight:700;">已驗證</span>
+            </div>
+            <div class="mini-row">
+              <span class="name">潘家明</span>
+              <span class="time">09:01</span>
+              <span style="font-size:.65rem;padding:2px 6px;border-radius:999px;background:#fff4dd;color:var(--warning);font-weight:700;">待審批</span>
+            </div>
+            <div class="mini-row">
+              <span class="name">陳雅雯</span>
+              <span class="time">09:17</span>
+              <span style="font-size:.65rem;padding:2px 6px;border-radius:999px;background:#fff0ef;color:var(--danger);font-weight:700;">遲到</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       BENEFITS (Why Choose)
+       ========================================================== -->
+  <section class="section" id="benefits">
+    <div class="container text-center">
+      <div class="reveal">
+        <span class="eyebrow">點解選擇 C4T</span>
+        <h2>同傳統打卡方式講 Bye Bye</h2>
+      </div>
+      <div class="benefits-list">
+        <div class="benefit-item reveal">
+          <div class="check">✓</div>
+          <div>
+            <h4>唔需要昂貴硬件</h4>
+            <p>唔使買指紋機、打卡鐘或者任何硬件。員工用自己嘅手機就得，公司零硬件成本。</p>
+          </div>
+        </div>
+        <div class="benefit-item reveal">
+          <div class="check">✓</div>
+          <div>
+            <h4>香港伺服器，資料安全</h4>
+            <p>採用 Supabase 雲端架構，資料加密儲存。每次審批操作都有完整 audit trail，合乎企業合規要求。</p>
+          </div>
+        </div>
+        <div class="benefit-item reveal">
+          <div class="check">✓</div>
+          <div>
+            <h4>5 分鐘完成設定</h4>
+            <p>輸入辦公室資料、加員工、set 規則——唔使 IT 團隊都可以自己搞掂。介面全繁體中文，香港 team 用得順手。</p>
+          </div>
+        </div>
+        <div class="benefit-item reveal">
+          <div class="check">✓</div>
+          <div>
+            <h4>員工用得簡單</h4>
+            <p>一個 app，一撳打卡。GPS + Wi-Fi 雙重驗證喺背景自動進行，員工完全唔需要煩惱。</p>
+          </div>
+        </div>
+        <div class="benefit-item reveal">
+          <div class="check">✓</div>
+          <div>
+            <h4>靈活嘅政策設定</h4>
+            <p>唔同部門可以唔同工時，彈性假期安排，遲到寬限分鐘數任你 set。適合各行各業嘅營運模式。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       TESTIMONIALS
+       ========================================================== -->
+  <section class="section testimonials-section" id="testimonials">
+    <div class="container text-center">
+      <div class="reveal">
+        <span class="eyebrow">客戶心聲</span>
+        <h2>睇吓其他公司點樣用 C4T</h2>
+        <p style="max-width:560px;margin:.8rem auto 0;">愈嚟愈多香港中小企選用 C4T 出勤系統嚟取代傳統打卡方式。</p>
+      </div>
+      <div class="testimonials-grid">
+        <div class="testimonial-card reveal">
+          <div class="stars">★★★★★</div>
+          <blockquote>「以前用 Excel 記錄出勤，每個月尾都要用半日時間對數。轉咗 C4T 之後，Dashboard 一目了然，CSV 一鍵匯出，真係幫我慳咗好多時間。」</blockquote>
+          <div class="author">
+            <div class="avatar">LW</div>
+            <div class="info">
+              <b>李偉強</b>
+              <span>營運總監 · 新輝物流</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal">
+          <div class="stars">★★★★★</div>
+          <blockquote>「員工用手機打卡好方便，GPS 圍欄功能令我知道佢哋真係喺辦公室打卡，唔會再有人代人打卡嘅問題。管理員後台嘅審批功能亦好實用。」</blockquote>
+          <div class="author">
+            <div class="avatar">CC</div>
+            <div class="info">
+              <b>陳卓芝</b>
+              <span>人力資源經理 · 雋景設計</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal">
+          <div class="stars">★★★★☆</div>
+          <blockquote>「我哋有唔同門市，以前要逐間打電話問返工情況。而家 C4T 嘅即時出勤版面一次過睇晒所有同事，真係幫到手。」</blockquote>
+          <div class="author">
+            <div class="avatar">MT</div>
+            <div class="info">
+              <b>馬天樂</b>
+              <span>創辦人 · 港島烘焙</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       CTA
+       ========================================================== -->
+  <section class="section cta-section" id="cta">
+    <div class="container reveal">
+      <span class="eyebrow" style="color:rgba(255,255,255,.5);">準備好未？</span>
+      <h2>開始使用 C4T 出勤系統</h2>
+      <p>立即登記免費試用，感受清晰一點嘅出勤管理體驗。冇隱藏收費，隨時取消。</p>
+      <div class="cta-actions">
+        <a href="#" class="btn btn-white">免費試用 14 日 →</a>
+        <a href="#" class="btn btn-outline">預約示範</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       FOOTER
+       ========================================================== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="brand">
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+              <rect width="28" height="28" rx="8" fill="#1677C8"/>
+              <path d="M14 6v8l5 3" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="14" cy="14" r="9" stroke="#fff" stroke-width="2" fill="none"/>
+            </svg>
+            C4T 出勤
+          </div>
+          <p>專為香港中小企而設嘅智能出勤管理方案。清晰、簡單、可靠。</p>
+        </div>
+        <div class="footer-col">
+          <h4>產品</h4>
+          <ul>
+            <li><a href="#features">功能</a></li>
+            <li><a href="#showcase">產品預覽</a></li>
+            <li><a href="#cta">免費試用</a></li>
+            <li><a href="#">定價</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>支援</h4>
+          <ul>
+            <li><a href="#">說明中心</a></li>
+            <li><a href="#">API 文件</a></li>
+            <li><a href="#">系統狀態</a></li>
+            <li><a href="#">聯絡我們</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>公司</h4>
+          <ul>
+            <li><a href="#">關於我們</a></li>
+            <li><a href="#">私隱政策</a></li>
+            <li><a href="#">服務條款</a></li>
+            <li><a href="#">就業機會</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 C4T Attendance. All rights reserved.</span>
+        <span>Built with ❤️ in Hong Kong</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==========================================================
+       SCRIPTS
+       ========================================================== -->
+  <script>
+    (function() {
+      'use strict';
+
+      /* ── Sticky nav ────────────────────────────────── */
+      const navbar = document.getElementById('navbar');
+      let lastScroll = 0;
+      window.addEventListener('scroll', () => {
+        const y = window.scrollY;
+        navbar.classList.toggle('scrolled', y > 40);
+        lastScroll = y;
+      }, { passive: true });
+
+      /* ── Mobile menu ───────────────────────────────── */
+      const menuBtn = document.getElementById('menuBtn');
+      const navLinks = document.getElementById('navLinks');
+      menuBtn.addEventListener('click', () => {
+        navLinks.classList.toggle('open');
+        menuBtn.textContent = navLinks.classList.contains('open') ? '✕' : '☰';
+      });
+      navLinks.querySelectorAll('a').forEach(a => {
+        a.addEventListener('click', () => {
+          navLinks.classList.remove('open');
+          menuBtn.textContent = '☰';
+        });
+      });
+
+      /* ── Scroll reveal (Intersection Observer) ─────── */
+      const revealEls = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+        revealEls.forEach(el => observer.observe(el));
+      } else {
+        revealEls.forEach(el => el.classList.add('visible'));
+      }
+    })();
+  </script>
+</body>
+</html>
