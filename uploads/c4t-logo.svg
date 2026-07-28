@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 64" role="img" aria-label="C4T">
+  <g fill="none" stroke="#55b9df" stroke-linecap="round" stroke-linejoin="round" stroke-width="5">
+    <path d="M17 23 10 12l15 5 9-8 4 13c8 4 12 10 12 18 0 11-9 18-20 18S4 51 4 40c0-7 5-13 13-17Z"/>
+    <path d="M17 40h1M35 40h1M22 49c3 3 8 3 11 0"/>
+  </g>
+  <text x="51" y="45" fill="#55b9df" font-family="Arial, sans-serif" font-size="27" font-weight="700">C4T</text>
+</svg>

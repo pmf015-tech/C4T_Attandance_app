@@ -36,7 +36,7 @@ const icon = (text) => `<span class="tile-mark" aria-hidden="true">${text}</span
 const pill = (type, text) => `<span class="pill ${type}">${text}</span>`;
 const brand = () => `
   <div class="brand">
-    <img src="uploads/c4t-logo-cropped.png" alt="C4T 標誌">
+    <img src="uploads/c4t-logo.svg" alt="C4T 標誌">
     <b>C4T 出勤</b>
   </div>`;
 
