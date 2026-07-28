@@ -84,6 +84,16 @@ select:focus-visible {
 .primary:hover { background: var(--sky-700); }
 .primary:disabled { opacity: .55; cursor: default; }
 
+.text-button {
+  width: 100%;
+  margin-top: 14px;
+  border: 0;
+  background: transparent;
+  color: var(--sky-600);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .pill {
   display: inline-flex;
   align-items: center;
@@ -610,6 +620,8 @@ select:focus-visible {
 .data-table tr:last-child td { border-bottom: 0; }
 .data-table tr:hover td { background: #fafafa; }
 
+.table-hint { display: none; }
+
 /* ── Employee list ─────────────────────────────────────────── */
 .employee-list { display: grid; gap: 10px; }
 .employee-row {
@@ -656,6 +668,46 @@ select:focus-visible {
 .save-row .primary { height: 43px; padding: 0 17px; }
 .save-message { color: var(--success); font-size: 12px; font-weight: 700; }
 
+.modal-backdrop {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(17, 17, 17, .36);
+}
+
+.modal-card {
+  width: min(100%, 440px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.modal-card form,
+.invite-result { padding: 18px; }
+
+.invite-result {
+  display: grid;
+  gap: 12px;
+}
+
+.invite-result canvas {
+  justify-self: center;
+  width: 220px;
+  height: 220px;
+  max-width: 100%;
+}
+
+.invite-result p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 /* ── Responsive: tablet ────────────────────────────────────── */
 @media (max-width: 900px) {
   .admin-shell { grid-template-columns: 1fr; }
@@ -701,9 +753,26 @@ select:focus-visible {
   .toolbar .field { flex: 1; min-width: 145px; }
   .toolbar .primary { margin-left: 0; }
 
-  .data-table {
+  .table-hint {
     display: block;
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: right;
+  }
+
+  .table-scroll {
     overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: #fff;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table {
+    min-width: 640px;
+    border: 0;
+    border-radius: 0;
     white-space: nowrap;
   }
 
@@ -712,6 +781,8 @@ select:focus-visible {
   .stat strong { font-size: 22px; }
 
   .login-card { padding: 25px; }
+
+  .modal-backdrop { padding: 16px; }
 
   .record-row {
     grid-template-columns: 1fr .8fr .8fr auto;

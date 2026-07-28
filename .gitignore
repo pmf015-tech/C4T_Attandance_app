@@ -4,6 +4,10 @@
 .freebuff/
 .codegraph
 .thumbnail
+.playwright-cli/
+
+# Dependencies
+node_modules/
 
 # Environment secrets
 .env

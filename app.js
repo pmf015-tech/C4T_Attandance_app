@@ -9,12 +9,15 @@
 /* ── Application state ─────────────────────────────────────── */
 const c4t = {
   view: 'login',
-  loginRole: 'employee',
   employeeTab: 'home',
   adminTab: 'overview',
   clockedIn: false,
   approved: 0,
   saveMessage: '',
+  activationToken: '',
+  activationMessage: '',
+  inviteModalOpen: false,
+  invite: null,
   /* Pin the "current" time so the clock display is stable until a punch. */
   _clockTime: null,
 };
@@ -23,8 +26,10 @@ window.c4tRender = render;       // live-auth.js calls this after auth
 
 /* ── Shortcuts ─────────────────────────────────────────────── */
 const D  = window.C4T_MOCK_DATA;
-const $  = (sel, ctx) => (ctx || document).querySelector(sel);
 const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)];
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+}[character]));
 
 /* ── Tiny icon / pill builders ─────────────────────────────── */
 const icon = (text) => `<span class="tile-mark" aria-hidden="true">${text}</span>`;
@@ -40,6 +45,14 @@ function hkTime(date) {
   return date.toLocaleString('zh-HK', {
     hour: '2-digit', minute: '2-digit', hour12: false,
     timeZone: 'Asia/Hong_Kong',
+  });
+}
+
+function hkDateTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('zh-HK', {
+    dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Hong_Kong',
   });
 }
 
@@ -63,10 +76,11 @@ function renderLogin() {
         <h1>出勤，清晰一點。</h1>
         <p>以公司帳戶登入 C4T 出勤系統。</p>
         <form id="login-form" data-form="login">
-          <label class="form-label" for="email">電郵地址</label>
-          <input class="field" id="email" type="email"
-                 placeholder="name@company.com"
-                 autocomplete="username" inputmode="email" required>
+          <label class="form-label" for="login-id">電話號碼</label>
+          <input class="field" id="login-id" type="tel"
+                 placeholder="8 位數字電話號碼"
+                 autocomplete="username" inputmode="numeric"
+                 maxlength="8" required>
 
           <label class="form-label" for="password">密碼</label>
           <input class="field" id="password" type="password"
@@ -76,15 +90,36 @@ function renderLogin() {
           <button class="primary" type="submit">登入</button>
         </form>
 
-        <div class="demo-switch">
-          <button class="${c4t.loginRole === 'employee' ? 'active' : ''}"
-                  data-role="employee">員工 Portal</button>
-          <button class="${c4t.loginRole === 'admin' ? 'active' : ''}"
-                  data-role="admin">管理員 Portal</button>
-        </div>
-
-        <p class="hint">原型模式：此登入只用作展示兩個 portal 的流程，尚未連接 Supabase Auth。</p>
+        <p class="hint">以公司登記的電話號碼登入。忘記密碼請聯絡管理員重設。</p>
         <p id="login-error" class="hint hidden" style="color:var(--danger)"></p>
+      </section>
+    </main>`;
+}
+
+function activationView() {
+  const hasToken = Boolean(c4t.activationToken);
+  return `
+    <main class="login">
+      <section class="login-card">
+        ${brand()}
+        <h1>啟用出勤帳戶</h1>
+        <p>${hasToken ? '請確認電話號碼，然後設定你的登入密碼。' : '請使用 Lisa 分享的一次性啟用 QR code。'}</p>
+        ${hasToken ? `
+          <form id="activation-form">
+            <label class="form-label" for="activation-phone">電話號碼</label>
+            <input class="field" id="activation-phone" type="tel"
+                   placeholder="8 位數字電話號碼" autocomplete="tel" inputmode="numeric"
+                   maxlength="8" required>
+            <label class="form-label" for="activation-password">設定密碼</label>
+            <input class="field" id="activation-password" type="password"
+                   placeholder="至少 12 個字元" autocomplete="new-password" required>
+            <label class="form-label" for="activation-password-confirm">確認密碼</label>
+            <input class="field" id="activation-password-confirm" type="password"
+                   placeholder="再次輸入密碼" autocomplete="new-password" required>
+            <button class="primary" type="submit">啟用帳戶</button>
+          </form>` : ''}
+        <p id="activation-message" class="hint ${c4t.activationMessage ? '' : 'hidden'}">${escapeHtml(c4t.activationMessage)}</p>
+        <button class="text-button" data-action="back-to-login">返回登入</button>
       </section>
     </main>`;
 }
@@ -392,28 +427,31 @@ function recordsAdmin() {
       <button class="primary">匯出 CSV</button>
     </div>
 
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>日期</th><th>員工</th><th>上班</th>
-          <th>下班</th><th>GPS</th><th>Wi-Fi</th><th>狀態</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${data.map(r => `
+    <p class="table-hint">左右滑動查看完整紀錄</p>
+    <div class="table-scroll" role="region" aria-label="出勤紀錄，可左右滑動查看" tabindex="0">
+      <table class="data-table">
+        <thead>
           <tr>
-            <td>${r.date}</td>
-            <td>${r.name}</td>
-            <td>${r.checkIn}</td>
-            <td>${r.checkOut}</td>
-            <td>${r.gps}</td>
-            <td>${r.wifi}</td>
-            <td>${pill(r.status === 'verified' ? 'success' : 'warning',
-                       r.status === 'verified' ? '已驗證' :
-                       r.status === 'late' ? '遲到' : '待審批')}</td>
-          </tr>`).join('')}
-      </tbody>
-    </table>`;
+            <th>日期</th><th>員工</th><th>上班</th>
+            <th>下班</th><th>GPS</th><th>Wi-Fi</th><th>狀態</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.map(r => `
+            <tr>
+              <td>${r.date}</td>
+              <td>${r.name}</td>
+              <td>${r.checkIn}</td>
+              <td>${r.checkOut}</td>
+              <td>${r.gps}</td>
+              <td>${r.wifi}</td>
+              <td>${pill(r.status === 'verified' ? 'success' : 'warning',
+                         r.status === 'verified' ? '已驗證' :
+                         r.status === 'late' ? '遲到' : '待審批')}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
 }
 
 /* ── Admin: Approvals ──────────────────────────────────────── */
@@ -446,7 +484,7 @@ function employeesAdmin() {
   return `
     <div class="toolbar">
       <input class="field" placeholder="搜尋員工" autocomplete="off">
-      <button class="primary">新增員工</button>
+      <button class="primary" data-action="open-invite">建立啟用 QR</button>
     </div>
     <div class="employee-list">
       ${staff.map(s => `
@@ -462,6 +500,45 @@ function employeesAdmin() {
           ${pill('success', s.status === 'active' ? '在職' : s.status)}
           <button class="approve">編輯</button>
         </article>`).join('')}
+    </div>`;
+}
+
+function inviteModal() {
+  if (!c4t.inviteModalOpen) return '';
+
+  const result = c4t.invite
+    ? `
+        <div class="invite-result">
+          <canvas id="invite-qr" aria-label="員工帳戶啟用 QR code"></canvas>
+          <b>${escapeHtml(c4t.invite.fullName)} · ${escapeHtml(c4t.invite.employeeNumber)}</b>
+          <p>此 QR 會在 ${escapeHtml(hkDateTime(c4t.invite.expiresAt))} 失效，掃描後只可使用一次。</p>
+          <input class="field" value="${escapeHtml(c4t.invite.url)}" readonly aria-label="啟用連結">
+          <div class="button-row">
+            <button class="approve" data-action="copy-invite">複製連結</button>
+            <button class="reject" data-action="close-invite">關閉</button>
+          </div>
+        </div>`
+    : `
+        <form id="invite-form">
+          <label class="form-label" for="invite-employee-number">員工編號</label>
+          <input class="field" id="invite-employee-number" placeholder="例如 SS-001"
+                 autocomplete="off" maxlength="32" required>
+          <p class="hint">只限尚未啟用、在職嘅員工。新 QR 會令舊 QR 即時失效。</p>
+          <div class="button-row">
+            <button class="primary" type="submit">建立 QR</button>
+            <button class="reject" type="button" data-action="close-invite">取消</button>
+          </div>
+        </form>`;
+
+  return `
+    <div class="modal-backdrop" role="presentation">
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="invite-title">
+        <div class="panel-heading">
+          <h2 id="invite-title">員工帳戶啟用 QR</h2>
+          <button data-action="close-invite" aria-label="關閉">關閉</button>
+        </div>
+        ${result}
+      </section>
     </div>`;
 }
 
@@ -537,7 +614,8 @@ function adminView() {
         </header>
         <section class="admin-content">${adminContent()}</section>
       </main>
-    </div>`;
+    </div>
+    ${inviteModal()}`;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -551,6 +629,8 @@ function render() {
 
   if (c4t.view === 'login') {
     root.innerHTML = renderLogin();
+  } else if (c4t.view === 'activate') {
+    root.innerHTML = activationView();
   } else if (c4t.view === 'employee') {
     root.innerHTML = employeeView();
   } else {
@@ -565,6 +645,7 @@ function render() {
   }
 
   bindEvents();
+  if (c4t.invite?.url) window.c4tDrawInviteQr?.(c4t.invite.url);
 }
 window.c4tRender = render;
 
@@ -575,31 +656,18 @@ function bindEvents() {
   if (loginForm) {
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      /* c4t.loginRole is set by the demo-switch buttons below.
-         If live-auth.js is loaded and Supabase is available,
-         it will intercept this submit via capture phase.
-         Otherwise we fall back to the demo switch behaviour. */
-      const email = document.getElementById('email')?.value.trim();
-      const password = document.getElementById('password')?.value;
-      if (!email || !password) {
-        const err = document.getElementById('login-error');
-        if (err) { err.textContent = '請輸入電郵地址及密碼。'; err.classList.remove('hidden'); }
-        return;
+      /* live-auth.js intercepts this submit in the capture phase and does
+         the real Supabase sign-in. Reaching this handler means the auth
+         layer failed to load, and the browser cannot authenticate anyone
+         or decide a role on its own (BACKEND-CONTRACT rules 1-2) — so
+         this refuses entry rather than guessing. */
+      const err = document.getElementById('login-error');
+      if (err) {
+        err.textContent = '登入服務暫時無法連接，請稍後再試。';
+        err.classList.remove('hidden');
       }
-      c4t.view = c4t.loginRole;
-      c4t._loginError = null;
-      render();
     });
   }
-
-  /* ── Role switch (demo) ──────────────────────────────── */
-  $$('[data-role]').forEach(el => {
-    el.addEventListener('click', () => {
-      c4t.loginRole = el.dataset.role;
-      c4t._loginError = null;
-      render();
-    });
-  });
 
   /* ── Generic actions ────────────────────────────────── */
   $$('[data-action]').forEach(el => {
@@ -613,6 +681,18 @@ function bindEvents() {
           c4t.saveMessage = '';
           c4t._clockTime = null;
           c4t._loginError = null;
+          break;
+        case 'back-to-login':
+          c4t.view = 'login';
+          c4t.activationMessage = '';
+          break;
+        case 'open-invite':
+          c4t.inviteModalOpen = true;
+          c4t.invite = null;
+          break;
+        case 'close-invite':
+          c4t.inviteModalOpen = false;
+          c4t.invite = null;
           break;
         case 'punch':
           c4t.clockedIn = !c4t.clockedIn;

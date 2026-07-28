@@ -23,5 +23,14 @@ window.C4T_RUNTIME_CONFIG = (() => {
     supabasePublishableKey:
       env.SUPABASE_PUBLISHABLE_KEY ||
       "sb_publishable_SdNsH-vmDNdPZcclbavlRQ_NJf1Sc6_",
+
+    appUrl: env.APP_URL || window.location.origin,
+
+    /* Staff sign in with their phone number. Supabase Auth keys users
+       by email, so the phone is mapped onto a non-routable address in
+       the RFC 2606 reserved `.invalid` TLD — nothing can ever be
+       delivered there, which is deliberate: these accounts have no
+       email recovery, the admin resets passwords. */
+    staffLoginDomain: env.STAFF_LOGIN_DOMAIN || "staff.sunspeed.invalid",
   };
 })();

@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>C4T 出勤</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="uploads/c4t-logo-cropped.png">
+  <link rel="stylesheet" href="style.css?v=mobile-responsive-1">
 </head>
 <body>
   <div id="app"></div>
@@ -21,6 +22,9 @@
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
           crossorigin="anonymous"></script>
+
+  <!-- Locally bundled QR encoder; activation tokens never leave the browser. -->
+  <script src="uploads/vendor/qrcode.min.js"></script>
 
   <!-- Live auth wiring (safe no-op if Supabase unavailable) -->
   <script src="live-auth.js"></script>

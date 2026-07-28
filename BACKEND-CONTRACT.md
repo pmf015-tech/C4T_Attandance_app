@@ -32,8 +32,8 @@ The supplied UI is a visual contract only. Its hard-coded people, dates, Wi-Fi/G
 1. The browser is untrusted: it cannot decide a role, verified Wi-Fi state, final GPS verdict, or review status.
 2. Use Supabase Auth for password login and password reset. `profiles.role` is the server/RLS authority; never infer admin from an email string.
 3. A punch permits one `clock_in` and one `clock_out` per employee per Hong Kong day, in that order. Database unique constraints enforce the invariant.
-4. Browser GPS is a one-time, advisory signal. Server validates shape, precision, and distance. It may block clear out-of-range attempts, but browser GPS alone never auto-verifies attendance.
-5. Auto-verification requires an office gateway/reverse proxy which validates company Wi-Fi server-side and passes a short-lived signed assertion. Do not expose a static gateway secret to browser code.
+4. Browser GPS is a one-time signal. The server validates shape, precision, and distance, and issues the final verdict — the browser never decides it. **Amended 2026-07-27:** GPS alone may auto-verify when `attendance_policy.allow_single_signal` is true (currently the case, for the GPS-only MVP). Out-of-range is still blocked; poor or missing accuracy still lands in `pending` for review.
+5. Wi-Fi auto-verification, when built, requires an office gateway/reverse proxy which validates company Wi-Fi server-side and passes a short-lived signed assertion. Do not expose a static gateway secret to browser code. No such gateway is deployed today, and a browser cannot read SSID/BSSID — never accept either from the client as evidence.
 6. Every admin review, policy update, schedule update and account status change writes an audit event: actor, timestamp, previous state, new state and optional note.
 7. RLS: employees can read only their profile, own schedule and own attendance; admins can read/write operational rows; service role is server-only.
 
