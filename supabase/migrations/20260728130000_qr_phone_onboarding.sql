@@ -128,7 +128,7 @@ begin
     raise exception 'The employee account is unavailable for onboarding';
   end if;
 
-  v_expected_email := lower(regexp_replace(v_roster.phone, '\\D', '', 'g') || '@staff.sunspeed.invalid');
+  v_expected_email := lower(regexp_replace(v_roster.phone, '\D', '', 'g') || '@staff.sunspeed.invalid');
   if lower(new.email) <> v_expected_email then
     raise exception 'The phone number does not match this onboarding QR code';
   end if;
