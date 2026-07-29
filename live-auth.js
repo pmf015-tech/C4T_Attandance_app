@@ -62,6 +62,7 @@
 		window.c4tState.activationMessage = "";
 		history.replaceState(null, "", `${location.pathname}${location.search}`);
 		window.c4tRender();
+		if (profile.role !== "admin") void refreshPunchState();
 		return true;
 	}
 
@@ -78,6 +79,31 @@
 		window.c4tState.activationMessage = "";
 		window.c4tRender();
 		return true;
+	}
+
+	/* Today's attendance row decides what the punch button may do. Re-read it
+	   on sign-in and after every punch instead of tracking state client-side. */
+	async function refreshPunchState() {
+		const { derivePunchState, hongKongAttendanceDay } = window.C4T_PUNCH_STATE;
+		const { data, error } = await client
+			.from("attendance_records")
+			.select("clock_in_at, clock_out_at, verification_status")
+			.eq("attendance_day", hongKongAttendanceDay())
+			.maybeSingle();
+
+		if (error) {
+			/* Leave punchState null so the button stays disabled rather than
+			   letting the employee punch against an unknown day. #login-error
+			   is not on screen here, so carry the message in state instead. */
+			console.error("Could not read today's attendance record", error);
+			window.c4tState.punchError = "無法讀取今日出勤記錄，請重新整理頁面。";
+			window.c4tRender();
+			return;
+		}
+
+		window.c4tState.punchError = "";
+		window.c4tState.punchState = derivePunchState(data);
+		window.c4tRender();
 	}
 
 	function activationUrl(token) {
@@ -226,7 +252,7 @@
 				event.stopImmediatePropagation();
 				await client.auth.signOut();
 				window.c4tState.view = "login";
-				window.c4tState.clockedIn = false;
+				window.c4tState.punchState = null;
 				window.c4tRender();
 				return;
 			}
@@ -260,8 +286,7 @@
 					window.alert(error.message);
 					return;
 				}
-				window.c4tState.clockedIn = !window.c4tState.clockedIn;
-				window.c4tRender();
+				await refreshPunchState();
 			};
 
 			if (!navigator.geolocation) {

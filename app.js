@@ -11,15 +11,16 @@ const c4t = {
   view: 'login',
   employeeTab: 'home',
   adminTab: 'overview',
-  clockedIn: false,
   approved: 0,
   saveMessage: '',
   activationToken: '',
   activationMessage: '',
   inviteModalOpen: false,
   invite: null,
-  /* Pin the "current" time so the clock display is stable until a punch. */
-  _clockTime: null,
+  /* Derived from today's attendance_records row by lib/punch-state.js.
+     null means "not loaded yet" — the punch button stays disabled until then. */
+  punchState: null,
+  punchError: '',
 };
 window.c4tState = c4t;           // live-auth.js reads this to switch views
 window.c4tRender = render;       // live-auth.js calls this after auth
@@ -56,11 +57,10 @@ function hkDateTime(value) {
   });
 }
 
-/* ── Dynamic clock value ───────────────────────────────────── */
+/* ── Recorded clock-in time ────────────────────────────────── */
 function clockDisplay() {
-  if (!c4t.clockedIn) return '--:--';
-  if (!c4t._clockTime) c4t._clockTime = hkTime(new Date());
-  return c4t._clockTime;
+  const clockInAt = c4t.punchState?.clockInAt;
+  return clockInAt ? hkTime(new Date(clockInAt)) : '--:--';
 }
 
 /* =============================================================
@@ -145,10 +145,33 @@ function employeeNav() {
 
 /* ── Employee: Home ────────────────────────────────────────── */
 function employeeHome() {
-  const action = c4t.clockedIn ? '下班打卡' : '上班打卡';
-  const status = c4t.clockedIn
-    ? `已於 ${clockDisplay()} 上班`
-    : '尚未打卡';
+  /* Today's attendance row is the authority — never a local toggle. Until it
+     has loaded, punchState is null and the button stays disabled so a punch
+     cannot be fired against an unknown state. */
+  const punch = c4t.punchState;
+  const loading = !punch;
+  const action = loading
+    ? '載入中…'
+    : punch.action === 'clock_out'
+      ? '下班打卡'
+      : punch.action === 'done'
+        ? '今日已完成'
+        : '上班打卡';
+  const status = loading
+    ? '讀取今日記錄…'
+    : punch.action === 'done'
+      ? `已於 ${clockDisplay()} 上班，並已下班打卡`
+      : punch.clockedIn
+        ? `已於 ${clockDisplay()} 上班`
+        : '尚未打卡';
+  const disabled = loading || !punch.canPunch ? ' disabled' : '';
+  const verificationNote = c4t.punchError
+    ? `<p class="punch-note" role="alert">${escapeHtml(c4t.punchError)}</p>`
+    : punch?.verification === 'pending'
+      ? '<p class="punch-note" role="status">此筆打卡未經核實，需要管理員審批。</p>'
+      : punch?.verification === 'blocked'
+        ? '<p class="punch-note" role="alert">打卡位置超出公司範圍，已標記為不通過。</p>'
+        : '';
   const weekday = D.getCurrentWeekday();
 
   return `
@@ -165,13 +188,14 @@ function employeeHome() {
         <h2>今日出勤</h2>
         <div class="clock">${clockDisplay()}</div>
         <span class="punch-state">${status}</span>
-        <button class="punch-button" data-action="punch">${action}</button>
+        <button class="punch-button" data-action="punch"${disabled}>${action}</button>
         <p class="punch-note">打卡時會提交位置及網絡驗證資料供系統審核。</p>
+        ${verificationNote}
       </article>
 
       <div class="section-title"><span>快捷功能</span></div>
       <div class="quick-grid">
-        <button class="action-tile" data-action="punch">
+        <button class="action-tile" data-action="punch"${disabled}>
           ${icon('打')}<b>${action}</b><span>記錄今天時間</span>
         </button>
         <button class="action-tile" data-employee-tab="records">
@@ -677,10 +701,9 @@ function bindEvents() {
       switch (a) {
         case 'logout':
           c4t.view = 'login';
-          c4t.clockedIn = false;
+          c4t.punchState = null;
           c4t.approved = 0;
           c4t.saveMessage = '';
-          c4t._clockTime = null;
           c4t._loginError = null;
           break;
         case 'back-to-login':
@@ -696,9 +719,9 @@ function bindEvents() {
           c4t.invite = null;
           break;
         case 'punch':
-          c4t.clockedIn = !c4t.clockedIn;
-          if (c4t.clockedIn) c4t._clockTime = hkTime(new Date());
-          else c4t._clockTime = null;
+          /* live-auth.js owns the punch: it calls punch_attendance() and then
+             re-reads today's row. Toggling state here would desync the UI from
+             the database, which is exactly the bug this replaced. */
           break;
         case 'approve':
         case 'reject':
