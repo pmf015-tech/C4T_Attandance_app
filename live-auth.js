@@ -87,11 +87,20 @@
 
 	window.c4tDrawInviteQr = (url) => {
 		const canvas = document.querySelector("#invite-qr");
-		if (!canvas || !window.QRCode?.toCanvas) return;
-		window.QRCode.toCanvas(canvas, url, {
-			width: 220,
-			margin: 2,
-			errorCorrectionLevel: "M",
+		if (!canvas) return;
+		/* A missing encoder used to leave a blank canvas with no explanation.
+		   The activation link is still shown beside it, so say so rather than
+		   letting the admin think the QR silently failed to generate. */
+		if (!window.QRCode?.toCanvas) {
+			console.error("QR encoder unavailable — uploads/vendor/qrcode.min.js did not load.");
+			showMessage("#invite-qr-error", "QR 編碼器未載入，請改用下方的啟用連結。");
+			return;
+		}
+		window.QRCode.toCanvas(canvas, url, { width: 220, margin: 2, errorCorrectionLevel: "M" }, (error) => {
+			if (error) {
+				console.error("QR render failed", error);
+				showMessage("#invite-qr-error", "QR 產生失敗，請改用下方的啟用連結。");
+			}
 		});
 	};
 
@@ -183,7 +192,15 @@
 			const invite = Array.isArray(data) ? data[0] : data;
 			if (error || !invite?.token) {
 				restoreButton(inviteForm, "建立 QR");
-				window.alert("無法建立啟用 QR。請確認員工編號仍未啟用，並再試一次。");
+				/* Surface the real reason. Collapsing every failure into "check the
+				   employee number" sent admins hunting through the roster when the
+				   actual cause was an expired session or a non-admin account. */
+				const reason = error?.message?.includes("Administrator access")
+					? "只有管理員可以建立啟用 QR。請以管理員帳戶重新登入。"
+					: error?.message?.includes("not found")
+						? `搵唔到員工編號「${employeeNumber}」，或該帳戶已經啟用。`
+						: error?.message || "未知錯誤。";
+				window.alert(`無法建立啟用 QR：${reason}`);
 				return;
 			}
 

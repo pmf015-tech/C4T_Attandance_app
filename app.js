@@ -510,6 +510,7 @@ function inviteModal() {
     ? `
         <div class="invite-result">
           <canvas id="invite-qr" aria-label="員工帳戶啟用 QR code"></canvas>
+          <p class="hint hidden" id="invite-qr-error" role="alert"></p>
           <b>${escapeHtml(c4t.invite.fullName)} · ${escapeHtml(c4t.invite.employeeNumber)}</b>
           <p>此 QR 會在 ${escapeHtml(hkDateTime(c4t.invite.expiresAt))} 失效，掃描後只可使用一次。</p>
           <input class="field" value="${escapeHtml(c4t.invite.url)}" readonly aria-label="啟用連結">
