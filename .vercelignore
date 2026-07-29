@@ -1,0 +1,19 @@
+# Everything here stays out of the deployed site. The repo is served as-is
+# (no build step), so anything not excluded is publicly fetchable.
+
+# Internal docs — delivery status, UAT findings, backend contract
+docs/
+*.md
+
+# Database migrations and scripts — not needed by the browser
+supabase/
+
+# Tests and build tooling
+tests/
+scripts/
+biome.json
+bun.lock
+
+# Prototype leftovers not served by index.html
+C4T Attendance.dc.html
+landing.html
