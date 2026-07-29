@@ -289,13 +289,27 @@
 				await refreshPunchState();
 			};
 
-			if (!navigator.geolocation) {
+			/* A punch with no GPS can never auto-verify. Say why, and let the
+			   employee decide — never submit blind coordinates on their behalf. */
+			const punchWithoutLocation = async (error) => {
+				const reason = window.C4T_GEO_NOTICE.geolocationFailureReason(error, {
+					secureContext: window.isSecureContext,
+					supported: Boolean(navigator.geolocation),
+				});
+				if (!window.confirm(`${reason}\n\n要繼續打卡嗎？`)) {
+					punchButton.disabled = false;
+					return;
+				}
 				await submitPunch(null);
+			};
+
+			if (!navigator.geolocation || !window.isSecureContext) {
+				await punchWithoutLocation(null);
 				return;
 			}
 			navigator.geolocation.getCurrentPosition(
 				submitPunch,
-				() => submitPunch(null),
+				punchWithoutLocation,
 				{ enableHighAccuracy: true, maximumAge: 0, timeout: 10000 },
 			);
 		},
