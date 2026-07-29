@@ -62,7 +62,10 @@
 		window.c4tState.activationMessage = "";
 		history.replaceState(null, "", `${location.pathname}${location.search}`);
 		window.c4tRender();
-		if (profile.role !== "admin") void refreshPunchState();
+		if (profile.role !== "admin") {
+			void refreshPunchState();
+			void refreshAttendanceHistory();
+		}
 		return true;
 	}
 
@@ -103,6 +106,38 @@
 
 		window.c4tState.punchError = "";
 		window.c4tState.punchState = derivePunchState(data);
+		window.c4tRender();
+		/* A punch changes the month's history too — keep both in step. */
+		void refreshAttendanceHistory();
+	}
+
+	/* The employee's own month of attendance. RLS scopes both reads to the
+	   signed-in user, so neither query filters by employee id. */
+	async function refreshAttendanceHistory() {
+		const { classifyAttendanceRow, summariseAttendance } = window.C4T_ATTENDANCE_HISTORY;
+		const { hongKongAttendanceDay } = window.C4T_PUNCH_STATE;
+		const monthStart = `${hongKongAttendanceDay().slice(0, 7)}-01`;
+
+		const [records, schedule] = await Promise.all([
+			client
+				.from("attendance_records")
+				.select("attendance_day, clock_in_at, clock_out_at, verification_status")
+				.gte("attendance_day", monthStart)
+				.order("attendance_day", { ascending: false }),
+			client.from("work_schedules").select("work_start").maybeSingle(),
+		]);
+
+		if (records.error) {
+			console.error("Could not read attendance history", records.error);
+			window.c4tState.historyError = "無法讀取出勤記錄，請重新整理頁面。";
+			window.c4tRender();
+			return;
+		}
+
+		/* A missing schedule is not an error — lateness simply cannot be judged. */
+		const rows = records.data.map((row) => classifyAttendanceRow(row, schedule.data?.work_start ?? null));
+		window.c4tState.historyError = "";
+		window.c4tState.history = { rows, summary: summariseAttendance(rows) };
 		window.c4tRender();
 	}
 

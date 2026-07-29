@@ -7,13 +7,6 @@
  */
 
 window.C4T_MOCK_DATA = (() => {
-  /* ── employee attendance records ─────────────────────────── */
-  const attendanceRecords = [
-    ['2026/07/16', '09:02', '18:00', 'normal'],
-    ['2026/07/15', '09:00', '18:04', 'normal'],
-    ['2026/07/14', '09:17', '18:02', 'late'],
-  ];
-
   /* ── staff roster ─────────────────────────────────────────── */
   const staffRoster = [
     { name: '黃嘉怡', role: '營運助理', status: 'active', initials: 'WH', email: 'ka.yee@c4t.example' },
@@ -40,15 +33,11 @@ window.C4T_MOCK_DATA = (() => {
   }
 
   return {
-    attendanceRecords,
-    getAttendanceRecords: () => attendanceRecords,
     staffRoster,
     getStaffRoster: () => staffRoster,
     adminTableData,
     getAdminTableData: () => adminTableData,
     dayOfWeek,
     getCurrentWeekday,
-    /* summary helpers */
-    getMonthlySummary: () => ({ daysWorked: 12, onTime: 11, lateDays: 1 }),
   };
 })();

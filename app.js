@@ -21,6 +21,9 @@ const c4t = {
      null means "not loaded yet" — the punch button stays disabled until then. */
   punchState: null,
   punchError: '',
+  /* Live attendance_records for the current month; null until loaded. */
+  history: null,
+  historyError: '',
 };
 window.c4tState = c4t;           // live-auth.js reads this to switch views
 window.c4tRender = render;       // live-auth.js calls this after auth
@@ -237,14 +240,46 @@ function employeeHome() {
 
 /* ── Employee: Records ─────────────────────────────────────── */
 function employeeRecords() {
-  const summary = D.getMonthlySummary();
-  const records = D.getAttendanceRecords();
+  /* Live attendance_records for the signed-in employee, loaded by live-auth.js.
+     null means "not loaded yet" — never fall back to mock rows, which is what
+     made the employee and admin views disagree with the database. */
+  const history = c4t.history;
+  const monthLabel = new Intl.DateTimeFormat('zh-HK', {
+    year: 'numeric', month: 'long', timeZone: 'Asia/Hong_Kong',
+  }).format(new Date());
+
+  const summaryBody = c4t.historyError
+    ? `<p role="alert">${escapeHtml(c4t.historyError)}</p>`
+    : !history
+      ? '<p>讀取中…</p>'
+      : `<p>出勤 ${history.summary.daysWorked} 日 ·
+           準時 ${history.summary.onTime} 日 ·
+           遲到 ${history.summary.lateDays} 日${
+             history.summary.awaitingReview
+               ? ` · <b>待審批 ${history.summary.awaitingReview} 日</b>`
+               : ''
+           }</p>`;
+
+  const rows = !history || c4t.historyError
+    ? ''
+    : history.rows.length === 0
+      ? '<div class="record-row"><div><b>本月未有出勤記錄</b></div></div>'
+      : history.rows.map(r => `
+          <div class="record-row">
+            <div><b>${escapeHtml(r.day)}</b><span>${D.dayOfWeek(r.day)}</span></div>
+            <div><span>上班</span><b>${escapeHtml(r.clockIn)}</b></div>
+            <div><span>下班</span><b>${escapeHtml(r.clockOut)}</b></div>
+            ${r.verification === 'pending' ? pill('warning', '待審批')
+              : r.verification === 'blocked' ? pill('warning', '不通過')
+              : r.late ? pill('warning', '遲到')
+              : pill('success', '正常')}
+          </div>`).join('');
 
   return `
     <section class="mobile-main">
       <div class="welcome">
         <div>
-          <div class="eyebrow">2026年7月</div>
+          <div class="eyebrow">${escapeHtml(monthLabel)}</div>
           <h1>出勤紀錄</h1>
         </div>
       </div>
@@ -254,28 +289,16 @@ function employeeRecords() {
           <div class="info-mark">月</div>
           <div>
             <b>本月摘要</b>
-            <p>出勤 ${summary.daysWorked} 日 ·
-               準時 ${summary.onTime} 日 ·
-               遲到 ${summary.lateDays} 日</p>
+            ${summaryBody}
           </div>
         </div>
       </article>
 
       <div class="section-title">
         <span>最近紀錄</span>
-        <button>篩選</button>
       </div>
 
-      <div class="record-card">
-        ${records.map(r => `
-          <div class="record-row">
-            <div><b>${r[0]}</b><span>${D.dayOfWeek(r[0])}</span></div>
-            <div><span>上班</span><b>${r[1]}</b></div>
-            <div><span>下班</span><b>${r[2]}</b></div>
-            ${pill(r[3] === 'late' ? 'warning' : 'success',
-                   r[3] === 'late' ? '遲到' : '正常')}
-          </div>`).join('')}
-      </div>
+      <div class="record-card">${rows}</div>
     </section>`;
 }
 
@@ -702,6 +725,8 @@ function bindEvents() {
         case 'logout':
           c4t.view = 'login';
           c4t.punchState = null;
+          c4t.history = null;
+          c4t.historyError = '';
           c4t.approved = 0;
           c4t.saveMessage = '';
           c4t._loginError = null;
