@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "bun ./index.html",
     "build": "mkdir -p uploads/vendor && bun build scripts/qrcode-browser-entry.js --format=iife --outfile=uploads/vendor/qrcode.min.js --minify",
-    "check:syntax": "node --check app.js && node --check live-auth.js && node --check runtime-config.js && node --check data/mock-data.js && node --check lib/punch-state.js && node --check lib/geolocation-notice.js && node --check lib/attendance-history.js",
-    "lint": "biome lint app.js live-auth.js runtime-config.js data/mock-data.js lib tests",
+    "check:syntax": "node --check app.js && node --check live-auth.js && node --check runtime-config.js && node --check lib/punch-state.js && node --check lib/geolocation-notice.js && node --check lib/attendance-history.js && node --check lib/admin-dashboard.js",
+    "lint": "biome lint app.js live-auth.js runtime-config.js lib tests",
     "test": "bun test",
     "check": "bun run check:syntax && bun run lint && bun test"
   },

@@ -45,9 +45,11 @@
 	}
 
 	async function routeAuthenticatedUser(user, messageSelector) {
+		/* The whole signed-in identity comes from this row. Every screen that used
+		   to hard-code a name, employee number or position now renders from it. */
 		const { data: profile, error } = await client
 			.from("profiles")
-			.select("role, active")
+			.select("user_id, full_name, role, active, department, position, employee_number, phone")
 			.eq("user_id", user.id)
 			.single();
 
@@ -57,12 +59,15 @@
 			return false;
 		}
 
+		window.c4tState.profile = profile;
 		window.c4tState.view = profile.role === "admin" ? "admin" : "employee";
 		window.c4tState.activationToken = "";
 		window.c4tState.activationMessage = "";
 		history.replaceState(null, "", `${location.pathname}${location.search}`);
 		window.c4tRender();
-		if (profile.role !== "admin") {
+		if (profile.role === "admin") {
+			void refreshAdminDashboard();
+		} else {
 			void refreshPunchState();
 			void refreshAttendanceHistory();
 		}
@@ -124,7 +129,7 @@
 				.select("attendance_day, clock_in_at, clock_out_at, verification_status")
 				.gte("attendance_day", monthStart)
 				.order("attendance_day", { ascending: false }),
-			client.from("work_schedules").select("work_start").maybeSingle(),
+			client.from("work_schedules").select("work_start, work_end").maybeSingle(),
 		]);
 
 		if (records.error) {
@@ -135,11 +140,69 @@
 		}
 
 		/* A missing schedule is not an error — lateness simply cannot be judged. */
+		window.c4tState.schedule = schedule.data ?? null;
 		const rows = records.data.map((row) => classifyAttendanceRow(row, schedule.data?.work_start ?? null));
 		window.c4tState.historyError = "";
 		window.c4tState.history = { rows, summary: summariseAttendance(rows) };
 		window.c4tRender();
 	}
+
+	/* Everything the admin screens show. RLS already restricts each of these to
+	   administrators, so none of them filters by role on the client. */
+	async function refreshAdminDashboard() {
+		const { adminAttendanceRow, todaySummary, rosterEntry } = window.C4T_ADMIN_DASHBOARD;
+		const { hongKongAttendanceDay } = window.C4T_PUNCH_STATE;
+		const today = hongKongAttendanceDay();
+		const monthStart = `${today.slice(0, 7)}-01`;
+
+		const [records, schedules, roster, policy] = await Promise.all([
+			client
+				.from("attendance_records")
+				.select(
+					"employee_id, attendance_day, clock_in_at, clock_out_at, verification_status," +
+						" gps_distance_m, gps_accuracy_m, wifi_assertion_status," +
+						" profiles!attendance_records_employee_id_fkey(full_name, position, employee_number)",
+				)
+				.gte("attendance_day", monthStart)
+				.order("attendance_day", { ascending: false })
+				.order("clock_in_at", { ascending: false }),
+			client.from("work_schedules").select("employee_id, work_start"),
+			client
+				.from("employee_roster")
+				.select(
+					"employee_number, full_name_zh, position, role, active, provisioning_status," +
+						" auth_user_id, work_start, work_end",
+				)
+				.order("employee_number"),
+			client.from("attendance_policy").select("*").maybeSingle(),
+		]);
+
+		if (records.error || roster.error) {
+			console.error("Could not read the admin dashboard", records.error || roster.error);
+			window.c4tState.adminError = "無法讀取出勤資料，請重新整理頁面。";
+			window.c4tRender();
+			return;
+		}
+
+		/* Lateness is judged per employee against their own start time — the six
+		   staff do not share one. A missing schedule leaves `late` false. */
+		const workStart = new Map((schedules.data ?? []).map((row) => [row.employee_id, row.work_start]));
+		const month = records.data.map((row) => adminAttendanceRow(row, workStart.get(row.employee_id) ?? null));
+		const entries = roster.data.map(rosterEntry);
+		const expected = entries.filter((entry) => entry.role === "employee" && entry.active).length;
+		const todayRows = month.filter((row) => row.day === today);
+
+		window.c4tState.adminError = "";
+		window.c4tState.admin = {
+			today: todayRows,
+			month,
+			roster: entries,
+			policy: policy.data ?? null,
+			summary: todaySummary(todayRows, expected),
+		};
+		window.c4tRender();
+	}
+	window.c4tRefreshAdminDashboard = refreshAdminDashboard;
 
 	function activationUrl(token) {
 		const baseUrl = (config.appUrl || location.origin).replace(/\/$/, "");

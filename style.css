@@ -580,6 +580,15 @@ select:focus-visible {
   background: #fff5f4;
   color: var(--danger);
 }
+/* An action with no backend must not look available. */
+.approve:disabled,
+.reject:disabled {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  opacity: .6;
+  cursor: not-allowed;
+}
 
 /* ── Toolbar ───────────────────────────────────────────────── */
 .toolbar {
@@ -622,6 +631,14 @@ select:focus-visible {
 
 .table-hint { display: none; }
 
+/* Row counts and read-only explanations that sit beside admin controls.
+   Distinct from .table-hint, which is the mobile-only swipe affordance. */
+.screen-note {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 /* ── Employee list ─────────────────────────────────────────── */
 .employee-list { display: grid; gap: 10px; }
 .employee-row {
@@ -635,6 +652,8 @@ select:focus-visible {
   background: var(--surface);
 }
 .employee-row small { display: block; margin-top: 3px; color: var(--muted); }
+.employee-status { display: flex; flex-wrap: wrap; gap: 6px; }
+.employee-row > span { white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 /* ── Settings grid ─────────────────────────────────────────── */
 .setting-grid {
@@ -739,9 +758,9 @@ select:focus-visible {
   .admin-grid { grid-template-columns: 1fr; }
   .setting-grid { grid-template-columns: 1fr; }
   .setting-grid label.full { grid-column: auto; }
-  .employee-row { grid-template-columns: 1fr auto; }
-  .employee-row > :nth-child(2),
-  .employee-row > :nth-child(3) { display: none; }
+  /* Keep every column: the shift and 待啟用 are the two things this screen
+     exists to show, so neither may be dropped to save width. */
+  .employee-row { grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 10px; }
 }
 
 /* ── Responsive: mobile ────────────────────────────────────── */

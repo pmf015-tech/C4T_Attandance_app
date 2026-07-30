@@ -11,12 +11,19 @@ const c4t = {
   view: 'login',
   employeeTab: 'home',
   adminTab: 'overview',
-  approved: 0,
-  saveMessage: '',
   activationToken: '',
   activationMessage: '',
   inviteModalOpen: false,
+  inviteFor: '',
   invite: null,
+  /* The signed-in user's own `profiles` row. Every name, employee number and
+     position on screen comes from here — nothing is hard-coded. */
+  profile: null,
+  /* The signed-in employee's `work_schedules` row; null when none exists. */
+  schedule: null,
+  /* Admin reads (today, month, roster, policy); null until loaded. */
+  admin: null,
+  adminError: '',
   /* Derived from today's attendance_records row by lib/punch-state.js.
      null means "not loaded yet" — the punch button stays disabled until then. */
   punchState: null,
@@ -29,7 +36,7 @@ window.c4tState = c4t;           // live-auth.js reads this to switch views
 window.c4tRender = render;       // live-auth.js calls this after auth
 
 /* ── Shortcuts ─────────────────────────────────────────────── */
-const D  = window.C4T_MOCK_DATA;
+const A  = window.C4T_ADMIN_DASHBOARD;
 const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)];
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -59,6 +66,22 @@ function hkDateTime(value) {
     dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Hong_Kong',
   });
 }
+
+/* ── Today, as the attendance day the database uses ────────── */
+function hkToday() {
+  return window.C4T_PUNCH_STATE.hongKongAttendanceDay();
+}
+
+function hkLongDate(day) {
+  const parsed = new Date(`${day}T12:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return day;
+  return parsed.toLocaleDateString('zh-HK', {
+    year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Hong_Kong',
+  });
+}
+
+/* "09:30:00" -> "09:30" */
+const clockLabel = (time) => (time ? String(time).slice(0, 5) : null);
 
 /* ── Recorded clock-in time ────────────────────────────────── */
 function clockDisplay() {
@@ -175,16 +198,20 @@ function employeeHome() {
       : punch?.verification === 'blocked'
         ? '<p class="punch-note" role="alert">打卡位置超出公司範圍，已標記為不通過。</p>'
         : '';
-  const weekday = D.getCurrentWeekday();
+  const today = hkToday();
+  const start = clockLabel(c4t.schedule?.work_start);
+  const end = clockLabel(c4t.schedule?.work_end);
+  /* The signed-in employee's own name and shift — never a sample staff member. */
+  const givenName = c4t.profile ? A.initials(c4t.profile.full_name) : '';
 
   return `
     <section class="mobile-main">
       <div class="welcome">
         <div>
-          <div class="eyebrow">${weekday} · 2026年7月16日</div>
-          <h1>早晨，嘉怡</h1>
+          <div class="eyebrow">${A.weekday(today)} · ${escapeHtml(hkLongDate(today))}</div>
+          <h1>${givenName ? `早晨，${escapeHtml(givenName)}` : '早晨'}</h1>
         </div>
-        <span class="today">09:00 — 18:00</span>
+        <span class="today">${start && end ? `${escapeHtml(start)} — ${escapeHtml(end)}` : '未設定班次'}</span>
       </div>
 
       <article class="punch-card">
@@ -220,7 +247,12 @@ function employeeHome() {
           <div>
             <b>辦公室位置</b>
             <p>火炭工業中心 9 樓 901 室</p>
-            ${pill('success', '位置在設定範圍內')}
+            ${/* Reflects today's actual record, not a standing claim that the
+                 phone is in range — the browser cannot know that on its own. */
+              !punch?.clockedIn ? pill('warning', '尚未打卡')
+                : punch.verification === 'verified' ? pill('success', '今日打卡位置已驗證')
+                : punch.verification === 'blocked' ? pill('warning', '今日打卡超出範圍')
+                : pill('warning', '今日打卡待管理員審批')}
           </div>
         </div>
       </article>
@@ -230,8 +262,8 @@ function employeeHome() {
           <div class="info-mark">網</div>
           <div>
             <b>公司 Wi-Fi</b>
-            <p>等候受信任 gateway 的驗證結果。</p>
-            ${pill('warning', '需要系統確認')}
+            <p>未設定受信任 gateway，目前以 GPS 位置驗證打卡。</p>
+            ${pill('warning', '未啟用')}
           </div>
         </div>
       </article>
@@ -266,7 +298,7 @@ function employeeRecords() {
       ? '<div class="record-row"><div><b>本月未有出勤記錄</b></div></div>'
       : history.rows.map(r => `
           <div class="record-row">
-            <div><b>${escapeHtml(r.day)}</b><span>${D.dayOfWeek(r.day)}</span></div>
+            <div><b>${escapeHtml(r.day)}</b><span>${A.weekday(r.day)}</span></div>
             <div><span>上班</span><b>${escapeHtml(r.clockIn)}</b></div>
             <div><span>下班</span><b>${escapeHtml(r.clockOut)}</b></div>
             ${r.verification === 'pending' ? pill('warning', '待審批')
@@ -304,6 +336,29 @@ function employeeRecords() {
 
 /* ── Employee: Profile ─────────────────────────────────────── */
 function employeeProfile() {
+  const profile = c4t.profile;
+  const start = clockLabel(c4t.schedule?.work_start);
+  const end = clockLabel(c4t.schedule?.work_end);
+
+  const card = !profile
+    ? '<article class="profile-card"><div class="profile-list"><div><span>讀取中…</span></div></div></article>'
+    : `
+      <article class="profile-card">
+        <div class="profile-hero">
+          <div class="avatar">${escapeHtml(A.initials(profile.full_name))}</div>
+          <div>
+            <h2>${escapeHtml(profile.full_name)}</h2>
+            <p>${escapeHtml(profile.phone || '未登記電話')}</p>
+          </div>
+        </div>
+        <div class="profile-list">
+          <div><span>職位</span><b>${escapeHtml(profile.position || '未設定')}</b></div>
+          <div><span>部門</span><b>${escapeHtml(profile.department || '未分配')}</b></div>
+          <div><span>員工編號</span><b>${escapeHtml(profile.employee_number || '未設定')}</b></div>
+          <div><span>上班時間</span><b>${start && end ? `${escapeHtml(start)} — ${escapeHtml(end)}` : '未設定班次'}</b></div>
+        </div>
+      </article>`;
+
   return `
     <section class="mobile-main">
       <div class="welcome">
@@ -313,21 +368,7 @@ function employeeProfile() {
         </div>
       </div>
 
-      <article class="profile-card">
-        <div class="profile-hero">
-          <div class="avatar">WH</div>
-          <div>
-            <h2>黃嘉怡</h2>
-            <p>ka.yee@c4t.example</p>
-          </div>
-        </div>
-        <div class="profile-list">
-          <div><span>職位</span><b>營運助理</b></div>
-          <div><span>部門</span><b>未分配</b></div>
-          <div><span>員工編號</span><b>C4T-001</b></div>
-          <div><span>到職日期</span><b>2026年7月1日</b></div>
-        </div>
-      </article>
+      ${card}
 
       <div class="section-title"><span>帳戶安全</span></div>
       <article class="info-card">
@@ -353,7 +394,7 @@ function employeeView() {
     <div class="employee-shell">
       <header class="mobile-top">
         ${brand()}
-        <div class="avatar">WH</div>
+        <div class="avatar">${escapeHtml(c4t.profile ? A.initials(c4t.profile.full_name) : '—')}</div>
       </header>
       ${content}
       ${employeeNav()}
@@ -391,28 +432,73 @@ function adminNav() {
     </aside>`;
 }
 
+/* ── Admin: shared states ──────────────────────────────────── */
+function adminNotice(message) {
+  return `<section class="panel"><div class="approval"><b>${escapeHtml(message)}</b></div></section>`;
+}
+
+/* Every admin screen renders from c4t.admin. Until it loads there is nothing
+   truthful to show, so say so rather than filling the screen with samples. */
+function adminGate() {
+  if (c4t.adminError) return adminNotice(c4t.adminError);
+  if (!c4t.admin) return adminNotice('讀取中…');
+  return null;
+}
+
+/* One row of 今日即時出勤 / 待審批. */
+function attendanceStatusPill(row) {
+  if (row.verification === 'pending') return pill('warning', '待審批');
+  if (row.verification === 'blocked') return pill('warning', '不通過');
+  if (row.late) return pill('warning', '遲到');
+  return pill('success', '已驗證');
+}
+
+function liveRow(row) {
+  return `
+    <div class="live-row">
+      <div class="person">
+        <div class="avatar">${escapeHtml(A.initials(row.name))}</div>
+        <div>
+          <b>${escapeHtml(row.name)}</b>
+          <span>${escapeHtml(row.employeeNumber)} · ${escapeHtml(row.position)}</span>
+        </div>
+      </div>
+      <time>${escapeHtml(row.clockIn)}</time>
+      ${attendanceStatusPill(row)}
+    </div>`;
+}
+
 /* ── Admin: Overview ───────────────────────────────────────── */
 function overview() {
-  const staff = D.getStaffRoster();
-  const pending = Math.max(0, 1 - c4t.approved);
+  const gate = adminGate();
+  if (gate) return gate;
+
+  const { today, roster, summary } = c4t.admin;
+  /* Named, so the admin can chase the people who have not punched instead of
+     inferring them from a count. */
+  const punched = new Set(today.map(row => row.employeeNumber));
+  const missing = roster
+    .filter(entry => entry.role === 'employee' && entry.active && entry.activated)
+    .filter(entry => !punched.has(entry.employeeNumber));
+  const awaitingReview = today.filter(row => row.verification === 'pending');
 
   return `
     <div class="stat-grid">
       <article class="stat">
         <span>已打卡</span>
-        <strong>3 <small>/ 3 人</small></strong>
+        <strong>${summary.punched} <small>/ ${summary.expected} 人</small></strong>
       </article>
       <article class="stat">
         <span>已驗證</span>
-        <strong style="color:var(--success)">2 <small>人</small></strong>
+        <strong style="color:var(--success)">${summary.verified} <small>人</small></strong>
       </article>
       <article class="stat">
         <span>待審批</span>
-        <strong style="color:var(--warning)">${pending} <small>項</small></strong>
+        <strong style="color:var(--warning)">${summary.pending} <small>項</small></strong>
       </article>
       <article class="stat">
         <span>遲到</span>
-        <strong style="color:var(--danger)">1 <small>人</small></strong>
+        <strong style="color:var(--danger)">${summary.late} <small>人</small></strong>
       </article>
     </div>
 
@@ -422,19 +508,15 @@ function overview() {
           <h2>今日即時出勤</h2>
           <button data-admin-tab="records">查看全部</button>
         </div>
-        ${staff.map((s, i) => `
-          <div class="live-row">
-            <div class="person">
-              <div class="avatar">${s.initials}</div>
-              <div>
-                <b>${s.name}</b>
-                <span>${s.role}</span>
-              </div>
-            </div>
-            <time>${i === 2 ? '09:17' : `09:0${i + 1}`}</time>
-            ${pill(i === 2 ? 'warning' : 'success',
-                   i === 2 ? '遲到' : '已驗證')}
-          </div>`).join('')}
+        ${today.length
+          ? today.map(liveRow).join('')
+          : '<div class="approval"><b>今日暫時未有人打卡</b></div>'}
+        ${missing.length
+          ? `<div class="approval">
+               <b>尚未打卡 · ${missing.length} 人</b>
+               <p>${missing.map(entry => escapeHtml(entry.name)).join('、')}</p>
+             </div>`
+          : ''}
       </section>
 
       <section class="panel">
@@ -442,18 +524,15 @@ function overview() {
           <h2>待審批</h2>
           <button data-admin-tab="approvals">審批中心</button>
         </div>
-        ${c4t.approved
-          ? `<div class="approval">
-               <b>全部處理完成</b>
-               <p>今天沒有待處理的出勤更正。</p>
-             </div>`
+        ${awaitingReview.length
+          ? awaitingReview.map(row => `
+              <div class="approval">
+                <b>${escapeHtml(row.name)} · ${escapeHtml(row.clockIn)} 上班打卡</b>
+                <p>GPS ${escapeHtml(row.gps)}；Wi-Fi ${escapeHtml(row.wifi)}。</p>
+              </div>`).join('')
           : `<div class="approval">
-               <b>潘家明 · 上班打卡</b>
-               <p>GPS 在範圍內；尚未收到受信任 Wi-Fi gateway 確認。</p>
-               <div class="button-row">
-                 <button class="approve" data-action="approve">批准</button>
-                 <button class="reject" data-action="reject">退回</button>
-               </div>
+               <b>沒有待處理的打卡</b>
+               <p>今日未有需要人手審批的記錄。</p>
              </div>`}
       </section>
     </div>`;
@@ -461,17 +540,17 @@ function overview() {
 
 /* ── Admin: Records ────────────────────────────────────────── */
 function recordsAdmin() {
-  const data = D.getAdminTableData();
+  const gate = adminGate();
+  if (gate) return gate;
+
+  const rows = c4t.admin.month;
+  const monthLabel = new Intl.DateTimeFormat('zh-HK', {
+    year: 'numeric', month: 'long', timeZone: 'Asia/Hong_Kong',
+  }).format(new Date());
 
   return `
     <div class="toolbar">
-      <input class="field" placeholder="搜尋員工" autocomplete="off">
-      <select class="field">
-        <option>全部狀態</option>
-        <option>已驗證</option>
-        <option>待審批</option>
-      </select>
-      <button class="primary">匯出 CSV</button>
+      <span class="screen-note">${escapeHtml(monthLabel)} · 共 ${rows.length} 筆</span>
     </div>
 
     <p class="table-hint">左右滑動查看完整紀錄</p>
@@ -484,18 +563,17 @@ function recordsAdmin() {
           </tr>
         </thead>
         <tbody>
-          ${data.map(r => `
+          ${rows.length ? rows.map(r => `
             <tr>
-              <td>${r.date}</td>
-              <td>${r.name}</td>
-              <td>${r.checkIn}</td>
-              <td>${r.checkOut}</td>
-              <td>${r.gps}</td>
-              <td>${r.wifi}</td>
-              <td>${pill(r.status === 'verified' ? 'success' : 'warning',
-                         r.status === 'verified' ? '已驗證' :
-                         r.status === 'late' ? '遲到' : '待審批')}</td>
-            </tr>`).join('')}
+              <td>${escapeHtml(r.day)}</td>
+              <td>${escapeHtml(r.name)}<br><small>${escapeHtml(r.employeeNumber)}</small></td>
+              <td>${escapeHtml(r.clockIn)}</td>
+              <td>${escapeHtml(r.clockOut)}</td>
+              <td>${escapeHtml(r.gps)}</td>
+              <td>${escapeHtml(r.wifi)}</td>
+              <td>${attendanceStatusPill(r)}</td>
+            </tr>`).join('')
+            : '<tr><td colspan="7">本月未有出勤記錄</td></tr>'}
         </tbody>
       </table>
     </div>`;
@@ -503,49 +581,72 @@ function recordsAdmin() {
 
 /* ── Admin: Approvals ──────────────────────────────────────── */
 function approvalsAdmin() {
+  const gate = adminGate();
+  if (gate) return gate;
+
+  const pending = c4t.admin.month.filter(row => row.verification === 'pending');
+
   return `
     <section class="panel">
       <div class="panel-heading">
         <h2>待處理項目</h2>
-        <span>${Math.max(0, 1 - c4t.approved)} 項</span>
+        <span>${pending.length} 項</span>
       </div>
-      ${c4t.approved
-        ? `<div class="approval">
-             <b>全部處理完成</b>
-             <p>沒有待處理的出勤更正。</p>
-           </div>`
+      ${pending.length
+        ? pending.map(row => `
+            <div class="approval">
+              <b>${escapeHtml(row.name)} · ${escapeHtml(row.employeeNumber)}</b>
+              <p>${escapeHtml(row.day)} ${escapeHtml(row.clockIn)} 上班打卡 ·
+                 GPS ${escapeHtml(row.gps)} · Wi-Fi ${escapeHtml(row.wifi)}</p>
+              <div class="button-row">
+                <button class="approve" disabled>批准紀錄</button>
+                <button class="reject" disabled>退回補充資料</button>
+              </div>
+            </div>`).join('')
         : `<div class="approval">
-             <b>潘家明 · 2026年7月16日 09:01</b>
-             <p>位置確認在地理圍欄內。Wi-Fi assertion 尚未收到，需由管理員決定是否批准。</p>
-             <div class="button-row">
-               <button class="approve" data-action="approve">批准紀錄</button>
-               <button class="reject" data-action="reject">退回補充資料</button>
-             </div>
+             <b>沒有待處理的打卡</b>
+             <p>本月所有打卡都已自動驗證。</p>
            </div>`}
+      <div class="approval">
+        <p>審批功能尚未接上後端：<code>review_attendance_record()</code> RPC 未建立，
+           所以上方按鈕暫時停用。批准動作必須寫入 <code>attendance_audit_events</code>，
+           需要新的 migration。</p>
+      </div>
     </section>`;
 }
 
 /* ── Admin: Employees ──────────────────────────────────────── */
 function employeesAdmin() {
-  const staff = D.getStaffRoster();
+  const gate = adminGate();
+  if (gate) return gate;
+
+  const roster = c4t.admin.roster;
+  const awaiting = roster.filter(entry => entry.canInvite).length;
+
   return `
     <div class="toolbar">
-      <input class="field" placeholder="搜尋員工" autocomplete="off">
+      <span class="screen-note">共 ${roster.length} 人 · 待啟用 ${awaiting} 人</span>
       <button class="primary" data-action="open-invite">建立啟用 QR</button>
     </div>
     <div class="employee-list">
-      ${staff.map(s => `
+      ${roster.map(entry => `
         <article class="employee-row">
           <div class="person">
-            <div class="avatar">${s.initials}</div>
+            <div class="avatar">${escapeHtml(A.initials(entry.name))}</div>
             <div>
-              <b>${s.name}</b>
-              <small>${s.email}</small>
+              <b>${escapeHtml(entry.name)}</b>
+              <small>${escapeHtml(entry.employeeNumber)} · ${escapeHtml(entry.position)}</small>
             </div>
           </div>
-          <span>${s.role}</span>
-          ${pill('success', s.status === 'active' ? '在職' : s.status)}
-          <button class="approve">編輯</button>
+          <span>${escapeHtml(entry.shift)}<br><small>${entry.role === 'admin' ? '管理員' : '員工'}</small></span>
+          <div class="employee-status">
+            ${entry.active ? '' : pill('warning', '停用')}
+            ${pill(entry.activated ? 'success' : 'warning', entry.accountLabel)}
+          </div>
+          ${entry.canInvite
+            ? `<button class="approve" data-action="invite-employee"
+                       data-employee-number="${escapeHtml(entry.employeeNumber)}">建立 QR</button>`
+            : '<button class="approve" disabled>建立 QR</button>'}
         </article>`).join('')}
     </div>`;
 }
@@ -569,7 +670,8 @@ function inviteModal() {
     : `
         <form id="invite-form">
           <label class="form-label" for="invite-employee-number">員工編號</label>
-          <input class="field" id="invite-employee-number" placeholder="例如 SS-001"
+          <input class="field" id="invite-employee-number" placeholder="例如 SS-002"
+                 value="${escapeHtml(c4t.inviteFor)}"
                  autocomplete="off" maxlength="32" required>
           <p class="hint">只限尚未啟用、在職嘅員工。新 QR 會令舊 QR 即時失效。</p>
           <div class="button-row">
@@ -592,42 +694,65 @@ function inviteModal() {
 
 /* ── Admin: Settings ───────────────────────────────────────── */
 function settingsAdmin() {
+  const gate = adminGate();
+  if (gate) return gate;
+
+  const policy = c4t.admin.policy;
+  if (!policy) return adminNotice('無法讀取出勤設定。');
+
+  const coordinates = policy.office_latitude && policy.office_longitude
+    ? `${policy.office_latitude}, ${policy.office_longitude}`
+    : '未設定';
+
+  /* Read-only: these are the values punch_attendance() actually enforces.
+     Editing them from the browser needs an audited write path that does not
+     exist yet, and a settings form that silently saves nothing is worse than
+     one that admits it. */
   return `
     <div>
       <div class="setting-grid">
         <label class="full">
           <span>辦公室位置</span>
-          <input class="field" value="火炭工業中心 9 樓 901 室">
+          <input class="field" value="${escapeHtml(policy.office_address || policy.office_name)}" readonly>
         </label>
         <label>
           <span>GPS 座標</span>
-          <input class="field" value="22.398727, 114.191719">
+          <input class="field" value="${escapeHtml(coordinates)}" readonly>
         </label>
         <label>
           <span>地理圍欄半徑</span>
-          <input class="field" value="150 米">
+          <input class="field" value="${policy.geofence_radius_m} 米" readonly>
         </label>
         <label>
-          <span>上班時間</span>
-          <input class="field" value="09:00">
+          <span>GPS 精確度上限</span>
+          <input class="field" value="${policy.maximum_gps_accuracy_m} 米" readonly>
         </label>
         <label>
-          <span>下班時間</span>
-          <input class="field" value="18:00">
+          <span>預設上班時間</span>
+          <input class="field" value="${escapeHtml(clockLabel(policy.default_work_start) || '')}" readonly>
+        </label>
+        <label>
+          <span>預設下班時間</span>
+          <input class="field" value="${escapeHtml(clockLabel(policy.default_work_end) || '')}" readonly>
         </label>
         <label>
           <span>遲到寬限</span>
-          <input class="field" value="15 分鐘">
+          <input class="field" value="${policy.late_tolerance_minutes} 分鐘" readonly>
         </label>
         <label>
           <span>公司 Wi-Fi</span>
-          <input class="field" placeholder="待設定受信任 gateway">
+          <input class="field" value="${escapeHtml(policy.gateway_name || '未設定受信任 gateway')}" readonly>
         </label>
       </div>
-      <div class="save-row">
-        <button class="primary" data-action="save-settings">儲存設定</button>
-        <span class="save-message">${c4t.saveMessage}</span>
-      </div>
+      <p class="screen-note">
+        以上為資料庫 <code>attendance_policy</code> 的實際設定，唯讀。
+        「預設上／下班時間」只適用於未設定班次的新帳戶；
+        每位員工各自的上班時間喺「員工管理」，遲到亦以各自的時間計算。
+        ${policy.allow_single_signal
+          ? '目前允許單一訊號（GPS）自動驗證。'
+          : '目前需要 GPS 及 Wi-Fi 雙重訊號才自動驗證。'}
+        修改設定需要具審計記錄的後端寫入路徑，尚未建立。
+      </p>
     </div>`;
 }
 
@@ -653,10 +778,10 @@ function adminView() {
         <header class="admin-top">
           <h1>${title}</h1>
           <div class="admin-user">
-            <div class="avatar">LH</div>
+            <div class="avatar">${escapeHtml(c4t.profile ? A.initials(c4t.profile.full_name) : '—')}</div>
             <div>
-              <b>Lisa Huang</b>
-              <span>管理員</span>
+              <b>${escapeHtml(c4t.profile?.full_name || '讀取中…')}</b>
+              <span>${escapeHtml(c4t.profile?.position || '管理員')}</span>
             </div>
           </div>
         </header>
@@ -727,8 +852,13 @@ function bindEvents() {
           c4t.punchState = null;
           c4t.history = null;
           c4t.historyError = '';
-          c4t.approved = 0;
-          c4t.saveMessage = '';
+          /* Nothing from the previous account may survive a sign-out — the next
+             person to sign in must not see the last one's roster or records. */
+          c4t.profile = null;
+          c4t.schedule = null;
+          c4t.admin = null;
+          c4t.adminError = '';
+          c4t.inviteFor = '';
           c4t._loginError = null;
           break;
         case 'back-to-login':
@@ -737,23 +867,25 @@ function bindEvents() {
           break;
         case 'open-invite':
           c4t.inviteModalOpen = true;
+          c4t.inviteFor = '';
+          c4t.invite = null;
+          break;
+        case 'invite-employee':
+          /* Straight from the roster row, so the admin never retypes a number
+             the RPC would then reject. */
+          c4t.inviteModalOpen = true;
+          c4t.inviteFor = el.dataset.employeeNumber || '';
           c4t.invite = null;
           break;
         case 'close-invite':
           c4t.inviteModalOpen = false;
+          c4t.inviteFor = '';
           c4t.invite = null;
           break;
         case 'punch':
           /* live-auth.js owns the punch: it calls punch_attendance() and then
              re-reads today's row. Toggling state here would desync the UI from
              the database, which is exactly the bug this replaced. */
-          break;
-        case 'approve':
-        case 'reject':
-          c4t.approved = 1;
-          break;
-        case 'save-settings':
-          c4t.saveMessage = '設定已儲存（原型模式）';
           break;
       }
       render();
