@@ -625,19 +625,16 @@ function approvalsAdmin() {
               <p>${escapeHtml(row.day)} ${escapeHtml(row.clockIn)} 上班打卡 ·
                  GPS ${escapeHtml(row.gps)} · Wi-Fi ${escapeHtml(row.wifi)}</p>
               <div class="button-row">
-                <button class="approve" disabled>批准紀錄</button>
-                <button class="reject" disabled>退回補充資料</button>
+                <button class="approve" data-action="review-attendance"
+                        data-record-id="${escapeHtml(row.id)}" data-decision="verified">批准紀錄</button>
+                <button class="reject" data-action="review-attendance"
+                        data-record-id="${escapeHtml(row.id)}" data-decision="blocked">退回補充資料</button>
               </div>
             </div>`).join('')
         : `<div class="approval">
              <b>沒有待處理的打卡</b>
              <p>本月所有打卡都已自動驗證。</p>
            </div>`}
-      <div class="approval">
-        <p>審批功能尚未接上後端：<code>review_attendance_record()</code> RPC 未建立，
-           所以上方按鈕暫時停用。批准動作必須寫入 <code>attendance_audit_events</code>，
-           需要新的 migration。</p>
-      </div>
     </section>`;
 }
 

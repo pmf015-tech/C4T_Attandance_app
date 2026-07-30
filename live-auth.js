@@ -159,7 +159,7 @@
 			client
 				.from("attendance_records")
 				.select(
-					"employee_id, attendance_day, clock_in_at, clock_out_at, verification_status," +
+					"id, employee_id, attendance_day, clock_in_at, clock_out_at, verification_status," +
 						" gps_distance_m, gps_accuracy_m, wifi_assertion_status," +
 						" profiles!attendance_records_employee_id_fkey(full_name, position, employee_number)",
 				)
@@ -344,6 +344,7 @@
 		async (event) => {
 			const logoutButton = event.target.closest('[data-action="logout"]');
 			const copyButton = event.target.closest('[data-action="copy-invite"]');
+			const reviewButton = event.target.closest('[data-action="review-attendance"]');
 			const punchButton = event.target.closest('[data-action="punch"]');
 
 			if (logoutButton) {
@@ -362,6 +363,25 @@
 				if (!url || !navigator.clipboard) return;
 				await navigator.clipboard.writeText(url);
 				copyButton.textContent = "已複製";
+				return;
+			}
+
+			if (reviewButton) {
+				event.stopImmediatePropagation();
+				const decision = reviewButton.dataset.decision;
+				if (!reviewButton.dataset.recordId || !["verified", "blocked"].includes(decision)) return;
+				reviewButton.disabled = true;
+				const { error } = await client.rpc("review_attendance_record", {
+					p_record_id: reviewButton.dataset.recordId,
+					p_decision: decision,
+					p_note: "",
+				});
+				if (error) {
+					reviewButton.disabled = false;
+					window.alert(error.message);
+					return;
+				}
+				await refreshAdminDashboard();
 				return;
 			}
 
