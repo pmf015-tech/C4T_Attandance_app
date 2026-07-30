@@ -35,6 +35,30 @@ const c4t = {
 window.c4tState = c4t;           // live-auth.js reads this to switch views
 window.c4tRender = render;       // live-auth.js calls this after auth
 
+/* ── Session reset ─────────────────────────────────────────── */
+/* Everything derived from the signed-in account. live-auth.js owns the real
+   sign-out and stops propagation before the local click handler runs, so both
+   paths call this one function — otherwise the next person to sign in inherits
+   the previous account's roster, profile and records. */
+function resetSession() {
+  c4t.view = 'login';
+  c4t.employeeTab = 'home';
+  c4t.adminTab = 'overview';
+  c4t.punchState = null;
+  c4t.punchError = '';
+  c4t.history = null;
+  c4t.historyError = '';
+  c4t.profile = null;
+  c4t.schedule = null;
+  c4t.admin = null;
+  c4t.adminError = '';
+  c4t.inviteModalOpen = false;
+  c4t.inviteFor = '';
+  c4t.invite = null;
+  c4t._loginError = null;
+}
+window.c4tResetSession = resetSession;
+
 /* ── Shortcuts ─────────────────────────────────────────────── */
 const A  = window.C4T_ADMIN_DASHBOARD;
 const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)];
@@ -380,6 +404,8 @@ function employeeProfile() {
           </div>
         </div>
       </article>
+
+      <button class="sign-out" data-action="logout">登出</button>
     </section>`;
 }
 
@@ -848,18 +874,7 @@ function bindEvents() {
       const a = el.dataset.action;
       switch (a) {
         case 'logout':
-          c4t.view = 'login';
-          c4t.punchState = null;
-          c4t.history = null;
-          c4t.historyError = '';
-          /* Nothing from the previous account may survive a sign-out — the next
-             person to sign in must not see the last one's roster or records. */
-          c4t.profile = null;
-          c4t.schedule = null;
-          c4t.admin = null;
-          c4t.adminError = '';
-          c4t.inviteFor = '';
-          c4t._loginError = null;
+          resetSession();
           break;
         case 'back-to-login':
           c4t.view = 'login';

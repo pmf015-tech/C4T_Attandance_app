@@ -347,10 +347,11 @@
 			const punchButton = event.target.closest('[data-action="punch"]');
 
 			if (logoutButton) {
+				/* This capture-phase handler stops propagation, so app.js's own
+				   logout branch never runs — clear the whole session here. */
 				event.stopImmediatePropagation();
 				await client.auth.signOut();
-				window.c4tState.view = "login";
-				window.c4tState.punchState = null;
+				window.c4tResetSession();
 				window.c4tRender();
 				return;
 			}

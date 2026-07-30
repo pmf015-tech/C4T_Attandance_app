@@ -40,6 +40,24 @@ describe("browser authentication boundary", () => {
     expect(auth).not.toMatch(/email\.(?:includes|endsWith|startsWith)\(/);
   });
 
+  test("clears the whole session on sign-out, not just the view", () => {
+    /* live-auth.js handles logout in the capture phase and stops propagation,
+       so app.js's own logout branch never runs. Clearing only `view` here left
+       the previous account's profile, roster and records in state for whoever
+       signed in next. */
+    const app = read("app.js");
+    expect(auth).toContain("window.c4tResetSession()");
+    expect(app).toContain("window.c4tResetSession = resetSession");
+    for (const field of ["profile", "schedule", "admin", "history", "punchState"]) {
+      expect(app).toMatch(new RegExp(`c4t\\.${field} = null`));
+    }
+  });
+
+  test("an employee can sign out without the admin sidebar", () => {
+    /* The employee shell has no side nav, so 登出 must exist on 個人資料. */
+    expect(read("app.js")).toContain('class="sign-out" data-action="logout"');
+  });
+
   test("does not expose a Supabase service-role credential", () => {
     expect(`${html}\n${auth}\n${runtimeConfig}`).not.toContain(
       "SUPABASE_SERVICE_ROLE_KEY",

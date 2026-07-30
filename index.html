@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>C4T 出勤</title>
   <link rel="icon" href="uploads/c4t-logo.jpg" type="image/jpeg">
-  <link rel="stylesheet" href="style.css?v=a2-live-admin-3">
+  <link rel="stylesheet" href="style.css?v=a2-logout-1">
 </head>
 <body>
   <div id="app"></div>
@@ -13,16 +13,16 @@
   <!-- Pure helpers (unit-tested under tests/) -->
   <!-- ?v= is bumped whenever these change: the static host serves them with
        heuristic freshness, so without it a browser keeps the previous build. -->
-  <script src="lib/punch-state.js?v=a2-live-admin-3"></script>
-  <script src="lib/geolocation-notice.js?v=a2-live-admin-3"></script>
-  <script src="lib/attendance-history.js?v=a2-live-admin-3"></script>
-  <script src="lib/admin-dashboard.js?v=a2-live-admin-3"></script>
+  <script src="lib/punch-state.js?v=a2-logout-1"></script>
+  <script src="lib/geolocation-notice.js?v=a2-logout-1"></script>
+  <script src="lib/attendance-history.js?v=a2-logout-1"></script>
+  <script src="lib/admin-dashboard.js?v=a2-logout-1"></script>
 
   <!-- Application logic -->
-  <script src="app.js?v=a2-live-admin-3"></script>
+  <script src="app.js?v=a2-logout-1"></script>
 
   <!-- Runtime config (injected by deployment; publishable key only) -->
-  <script src="runtime-config.js?v=a2-live-admin-3"></script>
+  <script src="runtime-config.js?v=a2-logout-1"></script>
 
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
@@ -32,6 +32,6 @@
   <script src="uploads/vendor/qrcode.min.js"></script>
 
   <!-- Live auth wiring (safe no-op if Supabase unavailable) -->
-  <script src="live-auth.js?v=a2-live-admin-3"></script>
+  <script src="live-auth.js?v=a2-logout-1"></script>
 </body>
 </html>

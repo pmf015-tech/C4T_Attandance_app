@@ -263,6 +263,22 @@ select:focus-visible {
   text-align: center;
 }
 
+/* Sign-out lives at the foot of 個人資料, the standard place to look for it on
+   mobile. Deliberately quieter than .punch-button: leaving is not the primary
+   action on this screen. */
+.sign-out {
+  width: 100%;
+  height: 48px;
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--danger);
+  font-size: 15px;
+  font-weight: 600;
+}
+.sign-out:hover { background: #fff5f4; border-color: #ffc6c1; }
+
 /* ── Section title ─────────────────────────────────────────── */
 .section-title {
   display: flex;
