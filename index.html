@@ -31,8 +31,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
           crossorigin="anonymous"></script>
 
-  <!-- Locally bundled QR encoder; activation tokens never leave the browser. -->
-  <script src="uploads/vendor/qrcode.min.js"></script>
+  <!-- QR code generation (CDN) — no build step needed -->
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"
+          crossorigin="anonymous"></script>
 
   <!-- Live auth wiring (safe no-op if Supabase unavailable) -->
   <script src="live-auth.js?v=a2-favicon-1"></script>

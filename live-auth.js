@@ -215,17 +215,22 @@
 		/* A missing encoder used to leave a blank canvas with no explanation.
 		   The activation link is still shown beside it, so say so rather than
 		   letting the admin think the QR silently failed to generate. */
-		if (!window.QRCode?.toCanvas) {
-			console.error("QR encoder unavailable — uploads/vendor/qrcode.min.js did not load.");
+		if (typeof QRious !== "function") {
+			console.error("QR encoder unavailable — qrious CDN library did not load.");
 			showMessage("#invite-qr-error", "QR 編碼器未載入，請改用下方的啟用連結。");
 			return;
 		}
-		window.QRCode.toCanvas(canvas, url, { width: 220, margin: 2, errorCorrectionLevel: "M" }, (error) => {
-			if (error) {
-				console.error("QR render failed", error);
-				showMessage("#invite-qr-error", "QR 產生失敗，請改用下方的啟用連結。");
-			}
-		});
+		try {
+			new QRious({
+				element: canvas,
+				value: url,
+				size: 220,
+				level: "M",
+			});
+		} catch (err) {
+			console.error("QR render failed", err);
+			showMessage("#invite-qr-error", "QR 產生失敗，請改用下方的啟用連結。");
+		}
 	};
 
 	document.addEventListener(
@@ -331,7 +336,7 @@
 			window.c4tState.invite = {
 				employeeNumber: invite.employee_number,
 				fullName: invite.full_name_zh,
-				expiresAt: new Date(invite.expires_at).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" }),
+				expiresAt: invite.expires_at,
 				url: activationUrl(invite.token),
 			};
 			window.c4tRender();
