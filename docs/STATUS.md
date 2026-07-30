@@ -48,6 +48,30 @@ public.employee_roster to authenticated`. Closes the A-5 gap: the RLS policy
 "Admins can read employee roster" existed with no grant behind it, so the query
 returned nothing. SELECT only; the admin-only policy is unchanged.
 
+### Employee sign-out + session state leak
+The employee shell has no side nav, so 登出 existed only on the admin sidebar —
+an employee could not sign out at all. Added at the foot of 個人資料.
+
+Fixing it exposed a real bug: `live-auth.js` handles logout in the capture phase
+and calls `stopImmediatePropagation()`, so `app.js`'s logout branch never ran.
+Only `view` and `punchState` were cleared, leaving the previous account's
+profile, schedule, roster, admin dashboard and records in state for whoever
+signed in next. Both paths now call one `window.c4tResetSession()`, locked by
+`tests/auth-boundary.test.js`.
+
+### Live data reset before UAT (owner-approved 2026-07-30)
+Ahead of the administrator (SS-ADM-001) using the app for real on 2026-07-31:
+- All `attendance_records` deleted (1 row: 2026-07-29, `pending`). Table is now 0.
+- The leftover `UAT Admin` account deleted from `auth.users` (cascades to
+  `profiles` → `work_schedules`), plus the 2 spent `onboarding_invites` it had
+  created — `onboarding_invites.created_by` is `restrict`, so they blocked it.
+- Both actions wrote `attendance_record.purge` / `account.delete` rows to
+  `attendance_audit_events` **before** the delete, so the trail outlives the actor.
+- Untouched: `employee_roster` (6 rows), the SS-ADM-001 and SS-001 accounts, all audit
+  events.
+- **Still present**: `employee.uat` (role `employee`, no roster row, no records).
+  Not removed — the owner named only the admin account.
+
 ### Cache-busting
 Local scripts and `style.css` now carry a shared `?v=` token in `index.html`.
 The static host serves them with heuristic freshness, which is why every previous
@@ -104,23 +128,23 @@ pending.
 
 ## Known gaps (not fixed)
 
-- **GPS end-to-end unproven** — no punch has ever carried real coordinates. The
-  only live record has `gps_accuracy_m = null`. Needs one real phone punch at the
-  office; today's record already has a clock-out so `punch_attendance()` will
-  reject another punch until 2026-07-30.
-- **HTTPS required in production** — `navigator.geolocation` only works in a
-  secure context. A plain-http deployment sends every punch to `pending`.
+- **GPS end-to-end unproven** — no punch has ever carried real coordinates.
+  `attendance_records` is now empty, so the first real phone punch at the office
+  on 2026-07-31 is also the first end-to-end GPS test. Watch that
+  `gps_accuracy_m` and `gps_distance_m` come back non-null and the row lands
+  `verified` rather than `pending`.
+- **HTTPS** — `navigator.geolocation` only works in a secure context. Satisfied
+  by the Vercel deployment; a plain-http host would send every punch to
+  `pending`. `vercel.json` sets `Permissions-Policy: geolocation=(self)`.
 - **A-3** — no `review_attendance_record()` RPC exists; the admin approve/reject
   buttons have no backend, so they now render **disabled** with the reason stated
   on screen rather than faking an approval. Needs a migration (approval required).
 - **Settings are read-only** — editing `attendance_policy` from the browser needs
   an audited write path (BACKEND-CONTRACT rule 4) that does not exist. The screen
   says so instead of offering a save button that discards input.
-- **Leftover UAT accounts** — `profiles` still holds two test rows from earlier
-  UAT: `employee.uat` and, more seriously, **`UAT Admin` with `role = 'admin'`**.
-  Neither has a roster row, so they do not appear on any screen, but the admin
-  account is a live privilege. Removing them touches Auth users and live data —
-  needs owner approval.
+- **Leftover UAT account** — `UAT Admin` is gone (see above). `employee.uat`
+  remains: role `employee`, no roster row, no records, so it appears on no
+  screen. Harmless but untidy; removing it needs owner approval by name.
 - **No CSV export / search on 出勤紀錄** — the previous toolbar had a search box,
   a status filter and an 匯出 CSV button that were decorative and did nothing.
   They were removed rather than left as false affordances; build them for real
