@@ -10,7 +10,6 @@ supabase/
 
 # Tests and build tooling
 tests/
-scripts/
 biome.json
 bun.lock
 
