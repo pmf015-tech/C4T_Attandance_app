@@ -611,6 +611,10 @@ function approvalsAdmin() {
   if (gate) return gate;
 
   const pending = c4t.admin.month.filter(row => row.verification === 'pending');
+  const blocked = c4t.admin.month.filter(row => row.verification === 'blocked');
+
+  const punchLine = (row) => `${escapeHtml(row.day)} ${escapeHtml(row.clockIn)} 上班打卡 ·
+                 GPS ${escapeHtml(row.gps)} · Wi-Fi ${escapeHtml(row.wifi)}`;
 
   return `
     <section class="panel">
@@ -622,8 +626,7 @@ function approvalsAdmin() {
         ? pending.map(row => `
             <div class="approval">
               <b>${escapeHtml(row.name)} · ${escapeHtml(row.employeeNumber)}</b>
-              <p>${escapeHtml(row.day)} ${escapeHtml(row.clockIn)} 上班打卡 ·
-                 GPS ${escapeHtml(row.gps)} · Wi-Fi ${escapeHtml(row.wifi)}</p>
+              <p>${punchLine(row)}</p>
               <div class="button-row">
                 <button class="approve" data-action="review-attendance"
                         data-record-id="${escapeHtml(row.id)}" data-decision="verified">批准紀錄</button>
@@ -635,7 +638,25 @@ function approvalsAdmin() {
              <b>沒有待處理的打卡</b>
              <p>本月所有打卡都已自動驗證。</p>
            </div>`}
-    </section>`;
+    </section>
+    ${blocked.length ? `
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>已拒絕的打卡</h2>
+        <span>${blocked.length} 項</span>
+      </div>
+      <p class="hint">系統判定這些打卡不在辦公室範圍內。如果判斷有誤（例如辦公室座標設定錯誤），
+         可以推翻，但必須填寫原因，紀錄會保留在審計日誌中。</p>
+      ${blocked.map(row => `
+        <div class="approval">
+          <b>${escapeHtml(row.name)} · ${escapeHtml(row.employeeNumber)}</b>
+          <p>${punchLine(row)}</p>
+          <div class="button-row">
+            <button class="approve" data-action="review-attendance" data-override="1"
+                    data-record-id="${escapeHtml(row.id)}" data-decision="verified">推翻並批准</button>
+          </div>
+        </div>`).join('')}
+    </section>` : ''}`;
 }
 
 /* ── Admin: Employees ──────────────────────────────────────── */

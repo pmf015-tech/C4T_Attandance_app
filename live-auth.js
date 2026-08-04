@@ -375,11 +375,21 @@
 				event.stopImmediatePropagation();
 				const decision = reviewButton.dataset.decision;
 				if (!reviewButton.dataset.recordId || !["verified", "blocked"].includes(decision)) return;
+
+				/* Overturning a block reverses an accusation that someone was not
+				   where they claimed, so the server demands a reason. Collect it
+				   here rather than letting the RPC reject an empty note. */
+				let note = "";
+				if (reviewButton.dataset.override) {
+					note = (window.prompt("推翻這條被拒絕的打卡，請填寫原因：") || "").trim();
+					if (!note) return;
+				}
+
 				reviewButton.disabled = true;
 				const { error } = await client.rpc("review_attendance_record", {
 					p_record_id: reviewButton.dataset.recordId,
 					p_decision: decision,
-					p_note: "",
+					p_note: note,
 				});
 				if (error) {
 					reviewButton.disabled = false;
