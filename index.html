@@ -8,6 +8,18 @@
        1024px canvas, which shrank to an unreadable speck in a tab. -->
   <link rel="icon" type="image/png" sizes="32x32" href="uploads/favicon-32.png?v=a2-favicon-2">
   <link rel="apple-touch-icon" sizes="180x180" href="uploads/apple-touch-icon.png?v=a2-favicon-2">
+
+  <!-- "Add to Home Screen" used to snapshot whatever URL was in the address bar,
+       so a shortcut made from a mistyped or preview host was saved forever, with
+       no address bar left to reveal or correct it. The manifest pins start_url,
+       so the icon always opens the real app — including when it is created from
+       the "#activate=" page a staff member lands on after scanning their QR. -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="C4T 出勤">
+
   <link rel="stylesheet" href="style.css?v=a2-favicon-1">
 </head>
 <body>
