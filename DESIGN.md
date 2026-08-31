@@ -4,6 +4,7 @@
 
 - The supplied BIPO screenshots inform only the layout grammar: a fast employee shortcut area, information cards, persistent mobile navigation, and a desktop administration shell.
 - C4T does not reuse BIPO logos, copy, image assets, or colour tokens.
+- The current brand asset is the user-supplied C4T Universe social-media icon: preserve its complete navy square and white mark without cropping or recolouring. Shared branding, favicon and home-screen icons use this asset; existing layout and interface tokens stay unchanged.
 - The product remains focused on attendance: clocking, attendance records, review, employees, and office policy.
 
 ## 1. Direction

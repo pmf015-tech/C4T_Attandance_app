@@ -11,13 +11,13 @@
   "theme_color": "#ffffff",
   "icons": [
     {
-      "src": "uploads/apple-touch-icon.png",
+      "src": "uploads/c4t-universe-apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "uploads/favicon-32.png",
+      "src": "uploads/c4t-universe-favicon-32.png",
       "sizes": "32x32",
       "type": "image/png",
       "purpose": "any"
