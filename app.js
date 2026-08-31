@@ -16,6 +16,9 @@ const c4t = {
   inviteModalOpen: false,
   inviteFor: '',
   invite: null,
+  resetTarget: null,
+  resetUrl: '',
+  recoveryMessage: '',
   /* The signed-in user's own `profiles` row. Every name, employee number and
      position on screen comes from here — nothing is hard-coded. */
   profile: null,
@@ -55,6 +58,9 @@ function resetSession() {
   c4t.inviteModalOpen = false;
   c4t.inviteFor = '';
   c4t.invite = null;
+  c4t.resetTarget = null;
+  c4t.resetUrl = '';
+  c4t.recoveryMessage = '';
   c4t._loginError = null;
 }
 window.c4tResetSession = resetSession;
@@ -139,8 +145,9 @@ function renderLogin() {
           <button class="primary" type="submit">登入</button>
         </form>
 
-        <p class="hint">以公司登記的電話號碼登入。忘記密碼請聯絡管理員重設。</p>
-        <p id="login-error" class="hint hidden" style="color:var(--danger)"></p>
+        <button class="text-button" data-action="forgot-password">忘記密碼？</button>
+        <p class="hint">以公司登記的電話號碼登入。</p>
+        <p id="login-error" class="hint hidden" role="status" style="color:var(--danger)"></p>
       </section>
     </main>`;
 }
@@ -168,6 +175,31 @@ function activationView() {
             <button class="primary" type="submit">啟用帳戶</button>
           </form>` : ''}
         <p id="activation-message" class="hint ${c4t.activationMessage ? '' : 'hidden'}">${escapeHtml(c4t.activationMessage)}</p>
+        <button class="text-button" data-action="back-to-login">返回登入</button>
+      </section>
+    </main>`;
+}
+
+function recoveryView() {
+  const resetting = c4t.view === 'recover';
+  return `
+    <main class="login">
+      <section class="login-card">
+        ${brand()}
+        <h1>${resetting ? '設定新密碼' : '忘記密碼'}</h1>
+        <p>${resetting ? '設定新密碼後，出勤紀錄會保留。' : '請透過公司平時使用的聯絡方式，向管理員提供員工編號，索取重設連結。管理員核實身份後，可以在「員工管理」建立連結。'}</p>
+        ${resetting ? `
+          <form id="recovery-form">
+            <label class="form-label" for="recovery-password">新密碼</label>
+            <input class="field" id="recovery-password" type="password" autocomplete="new-password"
+                   placeholder="至少 12 個字元" minlength="12" maxlength="128" required>
+            <label class="form-label" for="recovery-password-confirm">確認新密碼</label>
+            <input class="field" id="recovery-password-confirm" type="password" autocomplete="new-password"
+                   placeholder="再次輸入新密碼" minlength="12" maxlength="128" required>
+            <button class="primary" type="submit">更新密碼</button>
+          </form>
+          <p id="recovery-message" class="hint ${c4t.recoveryMessage ? '' : 'hidden'}" role="status">${escapeHtml(c4t.recoveryMessage)}</p>`
+          : '<p class="hint">電話登入帳戶不會收到重設電郵或 SMS。收到連結後，開啟連結自行設定密碼，毋須向管理員透露新密碼。連結過期或已使用，請重新索取。</p>'}
         <button class="text-button" data-action="back-to-login">返回登入</button>
       </section>
     </main>`;
@@ -201,9 +233,6 @@ function employeeHome() {
   const loading = !punch;
   const clockIn = punchTimeDisplay(punch?.clockInAt);
   const clockOut = punchTimeDisplay(punch?.clockOutAt);
-  /* Once the day is complete, the prominent time is the latest punch. The
-     previous implementation always reused clockInAt, which made a completed
-     09:07 / 18:11 day appear to have clocked out at 09:07 too. */
   const latestPunch = punch?.clockOutAt ? clockOut : clockIn;
   const action = loading
     ? '載入中…'
@@ -405,7 +434,7 @@ function employeeProfile() {
           <div class="info-mark">密</div>
           <div>
             <b>更改密碼</b>
-            <p>正式版將透過 Supabase Auth 安全更新密碼。</p>
+            <p>請向管理員索取重設連結，再自行設定密碼。</p>
           </div>
         </div>
       </article>
@@ -695,7 +724,10 @@ function employeesAdmin() {
           ${entry.canInvite
             ? `<button class="approve" data-action="invite-employee"
                        data-employee-number="${escapeHtml(entry.employeeNumber)}">建立 QR</button>`
-            : '<button class="approve" disabled>建立 QR</button>'}
+            : entry.active && entry.activated
+              ? `<button class="approve" data-action="reset-password"
+                         data-employee-number="${escapeHtml(entry.employeeNumber)}">重設密碼</button>`
+              : '<button class="approve" disabled>重設密碼</button>'}
         </article>`).join('')}
     </div>`;
 }
@@ -739,6 +771,31 @@ function inviteModal() {
         ${result}
       </section>
     </div>`;
+}
+
+function passwordResetModal() {
+  if (!c4t.resetTarget) return '';
+  return `
+    <dialog class="modal-card" id="password-reset-dialog" aria-labelledby="reset-title">
+      <div class="panel-heading">
+        <h2 id="reset-title">重設使用者密碼</h2>
+        <button data-action="close-reset" aria-label="關閉重設密碼">關閉</button>
+      </div>
+      <form id="admin-reset-form">
+        <b>${escapeHtml(c4t.resetTarget.name)} · ${escapeHtml(c4t.resetTarget.employeeNumber)}</b>
+        ${c4t.resetUrl ? `
+          <p class="hint">一次性連結已建立，有效期依系統設定。請只透過已核實的聯絡方式交給本人，勿分享到群組。</p>
+          <input class="field" readonly value="${escapeHtml(c4t.resetUrl)}" aria-label="重設密碼連結">
+          <button class="approve" type="button" data-action="copy-reset">複製連結</button>` : `
+          <p class="hint">請先核實使用者身份。建立連結不會更改現有密碼；對方開啟連結後自行設定，原有出勤紀錄不受影響。</p>
+          <label><input type="checkbox" id="reset-identity-confirmed" required> 我已核實使用者身份</label>
+          <div class="button-row">
+            <button class="primary" type="submit">建立重設連結</button>
+            <button class="reject" type="button" data-action="close-reset">取消</button>
+          </div>`}
+        <p id="reset-message" class="hint hidden" role="status"></p>
+      </form>
+    </dialog>`;
 }
 
 /* ── Admin: Settings ───────────────────────────────────────── */
@@ -837,7 +894,8 @@ function adminView() {
         <section class="admin-content">${adminContent()}</section>
       </main>
     </div>
-    ${inviteModal()}`;
+    ${inviteModal()}
+    ${passwordResetModal()}`;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -853,6 +911,8 @@ function render() {
     root.innerHTML = renderLogin();
   } else if (c4t.view === 'activate') {
     root.innerHTML = activationView();
+  } else if (c4t.view === 'forgot' || c4t.view === 'recover') {
+    root.innerHTML = recoveryView();
   } else if (c4t.view === 'employee') {
     root.innerHTML = employeeView();
   } else {
@@ -867,6 +927,14 @@ function render() {
   }
 
   bindEvents();
+  const resetDialog = document.getElementById('password-reset-dialog');
+  if (resetDialog) {
+    resetDialog.showModal();
+    resetDialog.addEventListener('cancel', () => {
+      c4t.resetTarget = null;
+      c4t.resetUrl = '';
+    });
+  }
   if (c4t.invite?.url) window.c4tDrawInviteQr?.(c4t.invite.url);
 }
 window.c4tRender = render;
@@ -902,6 +970,17 @@ function bindEvents() {
         case 'back-to-login':
           c4t.view = 'login';
           c4t.activationMessage = '';
+          break;
+        case 'forgot-password':
+          c4t.view = 'forgot';
+          break;
+        case 'reset-password':
+          c4t.resetTarget = c4t.admin?.roster.find(entry => entry.employeeNumber === el.dataset.employeeNumber) || null;
+          c4t.resetUrl = '';
+          break;
+        case 'close-reset':
+          c4t.resetTarget = null;
+          c4t.resetUrl = '';
           break;
         case 'open-invite':
           c4t.inviteModalOpen = true;

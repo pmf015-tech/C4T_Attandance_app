@@ -724,6 +724,10 @@ select:focus-visible {
 .modal-card form,
 .invite-result { padding: 18px; }
 
+dialog.modal-card { padding: 0; max-height: calc(100dvh - 32px); overflow-y: auto; color: var(--ink); }
+dialog.modal-card::backdrop { background: rgba(17, 17, 17, .36); }
+#admin-reset-form { display: grid; gap: 16px; }
+
 .invite-result {
   display: grid;
   gap: 12px;
@@ -787,6 +791,8 @@ select:focus-visible {
   .toolbar { flex-wrap: wrap; }
   .toolbar .field { flex: 1; min-width: 145px; }
   .toolbar .primary { margin-left: 0; }
+  .employee-row { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .employee-row .person { grid-column: 1 / -1; }
 
   .table-hint {
     display: block;

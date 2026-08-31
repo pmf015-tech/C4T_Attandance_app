@@ -49,6 +49,7 @@ Typography uses the system sans stack with 700–800 weight only for titles and 
 - `InfoCard`: default and warning states.
 - `DataTable`: default rows and selected row state.
 - `PolicyField`: idle, focus, and saved feedback state.
+- Password recovery reuses the login card, labelled password fields and primary button; states are ready, submitting, invalid/expired and saved. Admin issuance reuses the modal-card styling with a native dialog for focus containment and Escape dismissal; it requires identity confirmation and displays a private copyable link on success.
 
 ## 6. Accessibility
 

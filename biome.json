@@ -5,6 +5,7 @@
       "app.js",
       "live-auth.js",
       "runtime-config.js",
+      "api/**/*.js",
       "data/mock-data.js",
       "tests/**/*.js"
     ]

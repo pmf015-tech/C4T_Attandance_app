@@ -5,8 +5,8 @@
   "packageManager": "bun@1.3.14",
   "scripts": {
     "dev": "python3 -m http.server 3000",
-    "check:syntax": "node --check app.js && node --check live-auth.js && node --check runtime-config.js && node --check lib/punch-state.js && node --check lib/geolocation-notice.js && node --check lib/attendance-history.js && node --check lib/admin-dashboard.js",
-    "lint": "biome lint app.js live-auth.js runtime-config.js lib tests",
+    "check:syntax": "node --check app.js && node --check live-auth.js && node --check runtime-config.js && node --check lib/punch-state.js && node --check lib/geolocation-notice.js && node --check lib/attendance-history.js && node --check lib/admin-dashboard.js && node --check api/admin/reset-password.js",
+    "lint": "biome lint app.js live-auth.js runtime-config.js lib api tests",
     "test": "bun test",
     "check": "bun run check:syntax && bun run lint && bun test"
   },

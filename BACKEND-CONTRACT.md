@@ -19,6 +19,8 @@ The supplied UI is a visual contract only. Its hard-coded people, dates, Wi-Fi/G
 | Employee clock in/out | 上班打卡／下班打卡 | `POST /api/attendance/punch` | own employee only |
 | Employee attendance | 我的出勤 | `GET /api/attendance/me?month=YYYY-MM` | own records only |
 | Change password | 更新密碼 | Supabase Auth password update | own user only |
+| Forgotten phone-login password | 忘記密碼 → 聯絡管理員 → 重設連結 | native Supabase recovery token verification + own password update | one-use recovery proof |
+| Admin password recovery | 員工管理 → 重設密碼 | `POST /api/admin/reset-password` | current active admin, checked server-side |
 | Admin dashboard | 管理員總覽 | `GET /api/admin/dashboard?date=YYYY-MM-DD` | admin only |
 | Attendance records | 出勤紀錄 filters/drawer | `GET /api/admin/attendance` | admin only |
 | CSV export | 匯出 CSV | `GET /api/admin/attendance.csv` | admin only |
@@ -53,6 +55,16 @@ The supplied UI is a visual contract only. Its hard-coded people, dates, Wi-Fi/G
 - No BIPO source code or branding: only common attendance concepts are implemented.
 - No automatic email delivery implementation until the Supabase Auth SMTP sender/domain is configured.
 - No live database, Vercel, Auth user or credential change without explicit confirmation.
+
+## Password recovery (local implementation)
+
+- Phone login maps to a non-deliverable internal email address. No recovery email/SMS is sent. The administrator verifies identity via an existing company channel, creates a private link, and shares it with that person only. The administrator never enters their new password.
+- The Vercel endpoint requires server-only `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and canonical `APP_URL`. Never place a service-role key in `runtime-config.js` or browser environment variables. Provisioning these values and deployment require approval; the static Python preview does not run this endpoint.
+- The endpoint validates the caller with Supabase Auth, reads their current active admin profile, checks the target's roster/profile/Auth linkage, and uses native Auth `generate_link` with `type: recovery`. It preserves the Auth user ID, profile, schedule and attendance records. Issuance intent and successful generation are audited before returning a link; failures never return a token or provider error. Native Supabase Auth audit logs record password changes.
+- The link stores the native recovery token in the URL fragment. The browser removes it from the address bar immediately and only verifies it when a valid password form is submitted. Recovery uses a separate memory-only client, so an existing login cannot cause a different person's password to be changed. Expiry is governed by Supabase Auth's Email OTP expiration setting; no custom lifetime or immediate revocation of previously issued links is promised.
+- Passwords must be 12–128 characters and match confirmation; Auth remains the server-side password-policy authority. After saving, global sign-out revokes refresh sessions. Already-issued access JWTs remain valid until expiry. Issuing a link alone does not revoke sessions or change the password.
+- An audit-based 60-second per-target cooldown limits sequential duplicate requests; it is not an atomic concurrent rate limiter. Use a database gate if stronger limits become necessary.
+- Local tests cover authorization/failure boundaries and recovery state. Hosted configuration, actual link expiry/replay, real Auth audit events and staff-operated end-to-end recovery still need deployment/UAT approval.
 
 ## First vertical slice
 

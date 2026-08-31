@@ -1,5 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": {
+      "codex/admin-password-recovery": false
+    }
+  },
   "framework": null,
   "buildCommand": null,
   "installCommand": null,

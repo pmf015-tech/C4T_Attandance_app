@@ -13,6 +13,12 @@
 	);
 	const HK_PHONE_DIGITS = 8;
 	const ONBOARDING_TOKEN = /^[0-9a-f]{64}$/;
+	const RECOVERY_TOKEN = /^[0-9a-f]{40,128}$/i;
+	let recoveryToken = "";
+	let recoveryClient = null;
+	let recoveryVerified = false;
+	let recoveryBusy = false;
+	let authGeneration = 0;
 
 	function toAuthEmail(identifier) {
 		if (identifier.includes("@")) return identifier.toLowerCase();
@@ -38,13 +44,15 @@
 
 	function setBusy(form, label) {
 		const button = form.querySelector('button[type="submit"]');
-		if (!button) return false;
+		if (!button || button.disabled) return false;
 		button.disabled = true;
 		button.textContent = label;
 		return true;
 	}
 
 	async function routeAuthenticatedUser(user, messageSelector) {
+		if (window.c4tState.view === "recover") return false;
+		const generation = authGeneration;
 		/* The whole signed-in identity comes from this row. Every screen that used
 		   to hard-code a name, employee number or position now renders from it. */
 		const { data: profile, error } = await client
@@ -52,6 +60,7 @@
 			.select("user_id, full_name, role, active, department, position, employee_number, phone")
 			.eq("user_id", user.id)
 			.single();
+		if (generation !== authGeneration || window.c4tState.view === "recover") return false;
 
 		if (error || !profile?.active) {
 			await client.auth.signOut();
@@ -89,15 +98,120 @@
 		return true;
 	}
 
+	function showRecoveryFromHash() {
+		const params = new URLSearchParams(location.hash.slice(1));
+		if (!params.has("recovery")) return false;
+		authGeneration++;
+		recoveryToken = params.get("recovery") || "";
+		recoveryVerified = false;
+		recoveryClient = null;
+		window.c4tResetSession();
+		window.c4tState.view = "recover";
+		window.c4tState.recoveryMessage = RECOVERY_TOKEN.test(recoveryToken)
+			? "" : "重設連結無效，請向管理員索取新連結。";
+		history.replaceState(null, "", `${location.pathname}${location.search}`);
+		window.c4tRender();
+		return true;
+	}
+
+	async function saveRecoveredPassword(form) {
+		if (recoveryBusy) return;
+		const password = document.querySelector("#recovery-password")?.value || "";
+		const confirmation = document.querySelector("#recovery-password-confirm")?.value || "";
+		if (password.length < 12 || password.length > 128 || password !== confirmation) {
+			showMessage("#recovery-message", "請輸入 12 至 128 個字元的新密碼，並確認兩次輸入一致。");
+			return;
+		}
+		if (!RECOVERY_TOKEN.test(recoveryToken) && !recoveryVerified) {
+			showMessage("#recovery-message", "重設連結無效，請向管理員索取新連結。");
+			return;
+		}
+		if (!setBusy(form, "更新中…")) return;
+		recoveryBusy = true;
+		let saved = false;
+		try {
+			/* Keep recovery credentials out of the main client's persisted session.
+			   Verify on submit, so merely opening a link never consumes it. */
+			recoveryClient ??= window.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey, {
+				auth: { storageKey: "c4t-password-recovery", persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+			});
+			if (!recoveryVerified) {
+				const { data, error } = await recoveryClient.auth.verifyOtp({ token_hash: recoveryToken, type: "recovery" });
+				if (error || !data.session) {
+					showMessage("#recovery-message", "連結已失效，請向管理員索取新連結。");
+					return;
+				}
+				recoveryVerified = true;
+				recoveryToken = "";
+			}
+			const { error } = await recoveryClient.auth.updateUser({ password });
+			if (error) {
+				showMessage("#recovery-message", "未能更新密碼。請使用未曾使用過、較強的新密碼再試；如仍失敗，請重新索取連結。");
+				return;
+			}
+			saved = true;
+			const { error: signOutError } = await recoveryClient.auth.signOut({ scope: "global" });
+			await client.auth.signOut({ scope: "local" });
+			window.c4tResetSession();
+			window.c4tState._loginError = signOutError
+				? "密碼已更新，但未能確認所有舊登入已登出，請聯絡管理員。"
+				: "密碼已更新。請重新登入；舊權杖到期後失效。";
+			window.c4tRender();
+		} catch {
+			showMessage("#recovery-message", saved
+				? "密碼已更新，但登出未完成。請返回登入，並聯絡管理員確認舊登入狀態。"
+				: "連線失敗，請稍後再試。如連結已失效，請向管理員重新索取。");
+		} finally {
+			if (saved) { recoveryToken = ""; recoveryVerified = false; recoveryClient = null; }
+			recoveryBusy = false;
+			restoreButton(form, "更新密碼");
+		}
+	}
+
+	async function issuePasswordReset(form) {
+		const target = window.c4tState.resetTarget;
+		if (!target || !document.querySelector("#reset-identity-confirmed")?.checked || !setBusy(form, "建立中…")) return;
+		try {
+			const { data } = await client.auth.getSession();
+			if (!data.session) {
+				showMessage("#reset-message", "登入已失效，請重新登入。");
+				return;
+			}
+			const response = await fetch("/api/admin/reset-password", {
+				method: "POST",
+				headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
+				body: JSON.stringify({ employeeNumber: target.employeeNumber }),
+			});
+			if (!response.ok) {
+				showMessage("#reset-message", response.status === 403 ? "只有在職管理員可以重設密碼。"
+					: response.status === 429 ? "剛剛已建立連結，請稍候一分鐘再試。"
+					: "未能建立連結。請確認帳戶已啟用，以及伺服器已設定重設服務。");
+				return;
+			}
+			const result = await response.json();
+			const url = new URL(result.url);
+			if (url.origin !== new URL(config.appUrl || location.origin).origin || !RECOVERY_TOKEN.test(new URLSearchParams(url.hash.slice(1)).get("recovery") || "")) throw new Error("Invalid recovery response");
+			if (window.c4tState.resetTarget !== target) return;
+			window.c4tState.resetUrl = url.href;
+			window.c4tRender();
+		} catch {
+			showMessage("#reset-message", "連線失敗，未能取得重設連結。請稍後再試。");
+		} finally {
+			restoreButton(form, "建立重設連結");
+		}
+	}
+
 	/* Today's attendance row decides what the punch button may do. Re-read it
 	   on sign-in and after every punch instead of tracking state client-side. */
 	async function refreshPunchState() {
+		const generation = authGeneration;
 		const { derivePunchState, hongKongAttendanceDay } = window.C4T_PUNCH_STATE;
 		const { data, error } = await client
 			.from("attendance_records")
 			.select("clock_in_at, clock_out_at, verification_status")
 			.eq("attendance_day", hongKongAttendanceDay())
 			.maybeSingle();
+		if (generation !== authGeneration) return;
 
 		if (error) {
 			/* Leave punchState null so the button stays disabled rather than
@@ -119,6 +233,7 @@
 	/* The employee's own month of attendance. RLS scopes both reads to the
 	   signed-in user, so neither query filters by employee id. */
 	async function refreshAttendanceHistory() {
+		const generation = authGeneration;
 		const { classifyAttendanceRow, summariseAttendance } = window.C4T_ATTENDANCE_HISTORY;
 		const { hongKongAttendanceDay } = window.C4T_PUNCH_STATE;
 		const monthStart = `${hongKongAttendanceDay().slice(0, 7)}-01`;
@@ -131,6 +246,7 @@
 				.order("attendance_day", { ascending: false }),
 			client.from("work_schedules").select("work_start, work_end").maybeSingle(),
 		]);
+		if (generation !== authGeneration) return;
 
 		if (records.error) {
 			console.error("Could not read attendance history", records.error);
@@ -150,6 +266,7 @@
 	/* Everything the admin screens show. RLS already restricts each of these to
 	   administrators, so none of them filters by role on the client. */
 	async function refreshAdminDashboard() {
+		const generation = authGeneration;
 		const { adminAttendanceRow, todaySummary, rosterEntry } = window.C4T_ADMIN_DASHBOARD;
 		const { hongKongAttendanceDay } = window.C4T_PUNCH_STATE;
 		const today = hongKongAttendanceDay();
@@ -176,6 +293,7 @@
 				.order("employee_number"),
 			client.from("attendance_policy").select("*").maybeSingle(),
 		]);
+		if (generation !== authGeneration) return;
 
 		if (records.error || roster.error) {
 			console.error("Could not read the admin dashboard", records.error || roster.error);
@@ -239,10 +357,14 @@
 			const loginForm = event.target.closest("#login-form");
 			const activationForm = event.target.closest("#activation-form");
 			const inviteForm = event.target.closest("#invite-form");
-			if (!loginForm && !activationForm && !inviteForm) return;
+			const recoveryForm = event.target.closest("#recovery-form");
+			const resetForm = event.target.closest("#admin-reset-form");
+			if (!loginForm && !activationForm && !inviteForm && !recoveryForm && !resetForm) return;
 
 			event.preventDefault();
 			event.stopImmediatePropagation();
+			if (recoveryForm) return saveRecoveredPassword(recoveryForm);
+			if (resetForm) return issuePasswordReset(resetForm);
 
 			if (loginForm) {
 				const identifier = document.querySelector("#login-id")?.value.trim();
@@ -259,7 +381,9 @@
 				}
 
 				if (!setBusy(loginForm, "登入中…")) return;
+				const generation = ++authGeneration;
 				const { data, error } = await client.auth.signInWithPassword({ email, password });
+				if (generation !== authGeneration) return;
 				if (error || !data.user) {
 					restoreButton(loginForm, "登入");
 					showMessage("#login-error", "電話號碼或密碼不正確。");
@@ -347,6 +471,27 @@
 	document.addEventListener(
 		"click",
 		async (event) => {
+			const backButton = event.target.closest('[data-action="back-to-login"]');
+			const copyReset = event.target.closest('[data-action="copy-reset"]');
+			if (backButton && window.c4tState.view === "recover") {
+				event.stopImmediatePropagation();
+				if (recoveryBusy) return;
+				try { await recoveryClient?.auth.signOut({ scope: "local" }); } catch { /* Memory-only session is discarded below. */ }
+				recoveryClient = null;
+				recoveryToken = "";
+				recoveryVerified = false;
+				window.c4tResetSession();
+				window.c4tRender();
+				return;
+			}
+			if (copyReset) {
+				event.stopImmediatePropagation();
+				try {
+					await navigator.clipboard.writeText(window.c4tState.resetUrl);
+					copyReset.textContent = "已複製";
+				} catch { showMessage("#reset-message", "未能自動複製，請選取上方連結手動複製。"); }
+				return;
+			}
 			const logoutButton = event.target.closest('[data-action="logout"]');
 			const copyButton = event.target.closest('[data-action="copy-invite"]');
 			const reviewButton = event.target.closest('[data-action="review-attendance"]');
@@ -356,6 +501,7 @@
 				/* This capture-phase handler stops propagation, so app.js's own
 				   logout branch never runs — clear the whole session here. */
 				event.stopImmediatePropagation();
+				authGeneration++;
 				await client.auth.signOut();
 				window.c4tResetSession();
 				window.c4tRender();
@@ -450,10 +596,17 @@
 		true,
 	);
 
-	window.addEventListener("hashchange", showActivationFromHash);
-	if (!showActivationFromHash()) {
+	window.addEventListener("hashchange", () => {
+		if (recoveryBusy) {
+			history.replaceState(null, "", `${location.pathname}${location.search}`);
+			return;
+		}
+		if (!showRecoveryFromHash()) showActivationFromHash();
+	});
+	if (!showRecoveryFromHash() && !showActivationFromHash()) {
+		const generation = authGeneration;
 		void client.auth.getSession().then(({ data }) => {
-			if (data.session) void routeAuthenticatedUser(data.session.user, "#login-error");
+			if (generation === authGeneration && data.session) void routeAuthenticatedUser(data.session.user, "#login-error");
 		});
 	}
 })();
