@@ -107,10 +107,9 @@ function hkLongDate(day) {
 /* "09:30:00" -> "09:30" */
 const clockLabel = (time) => (time ? String(time).slice(0, 5) : null);
 
-/* ── Recorded clock-in time ────────────────────────────────── */
-function clockDisplay() {
-  const clockInAt = c4t.punchState?.clockInAt;
-  return clockInAt ? hkTime(new Date(clockInAt)) : '--:--';
+/* ── Recorded punch times ──────────────────────────────────── */
+function punchTimeDisplay(timestamp) {
+  return timestamp ? hkTime(new Date(timestamp)) : '--:--';
 }
 
 /* =============================================================
@@ -200,6 +199,12 @@ function employeeHome() {
      cannot be fired against an unknown state. */
   const punch = c4t.punchState;
   const loading = !punch;
+  const clockIn = punchTimeDisplay(punch?.clockInAt);
+  const clockOut = punchTimeDisplay(punch?.clockOutAt);
+  /* Once the day is complete, the prominent time is the latest punch. The
+     previous implementation always reused clockInAt, which made a completed
+     09:07 / 18:11 day appear to have clocked out at 09:07 too. */
+  const latestPunch = punch?.clockOutAt ? clockOut : clockIn;
   const action = loading
     ? '載入中…'
     : punch.action === 'clock_out'
@@ -210,9 +215,9 @@ function employeeHome() {
   const status = loading
     ? '讀取今日記錄…'
     : punch.action === 'done'
-      ? `已於 ${clockDisplay()} 上班，並已下班打卡`
+      ? `已於 ${clockIn} 上班，並已於 ${clockOut} 下班打卡`
       : punch.clockedIn
-        ? `已於 ${clockDisplay()} 上班`
+        ? `已於 ${clockIn} 上班`
         : '尚未打卡';
   const disabled = loading || !punch.canPunch ? ' disabled' : '';
   const verificationNote = c4t.punchError
@@ -240,7 +245,7 @@ function employeeHome() {
 
       <article class="punch-card">
         <h2>今日出勤</h2>
-        <div class="clock">${clockDisplay()}</div>
+        <div class="clock">${latestPunch}</div>
         <span class="punch-state">${status}</span>
         <button class="punch-button" data-action="punch"${disabled}>${action}</button>
         <p class="punch-note">打卡時會提交位置及網絡驗證資料供系統審核。</p>
@@ -273,7 +278,7 @@ function employeeHome() {
             <p>火炭工業中心 9 樓 901 室</p>
             ${/* Reflects today's actual record, not a standing claim that the
                  phone is in range — the browser cannot know that on its own. */
-              !punch?.clockedIn ? pill('warning', '尚未打卡')
+              !punch?.clockInAt ? pill('warning', '尚未打卡')
                 : punch.verification === 'verified' ? pill('success', '今日打卡位置已驗證')
                 : punch.verification === 'blocked' ? pill('warning', '今日打卡超出範圍')
                 : pill('warning', '今日打卡待管理員審批')}
